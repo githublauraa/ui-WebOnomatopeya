@@ -1,0 +1,94 @@
+<main class="contenedor-diagrama">
+
+  @if (cargando) {
+    <p class="estado cargando">Cargando diagrama...</p>
+  }
+
+  @if (error) {
+    <p class="estado error">{{ error }}</p>
+  }
+
+  @if (diagrama) {
+
+    <section class="encabezado-proceso">
+      <h1>{{ diagrama.proceso.nombre }}</h1>
+      <p>{{ diagrama.proceso.descripcion }}</p>
+
+      <p>
+        <strong>Categoría:</strong> {{ diagrama.proceso.categoria }}
+      </p>
+
+      <p>
+        <strong>Estado:</strong> {{ diagrama.proceso.estadoPublicacion }}
+      </p>
+    </section>
+
+    <section class="zona-pools">
+      <h2>Diagrama del proceso</h2>
+
+      @for (pool of diagrama.pools; track pool.id) {
+        <article class="pool">
+          <h3>{{ pool.nombre }}</h3>
+
+          <p>
+            <strong>Tipo de participante:</strong>
+            {{ pool.tipoParticipante }}
+          </p>
+
+          <div class="lanes">
+            @for (lane of diagrama.lanes; track lane.id) {
+              @if (lane.poolId === pool.id) {
+                <section class="lane">
+                  <h4>{{ lane.nombre }}</h4>
+
+                  <div class="nodos">
+                    @for (nodo of diagrama.nodos; track nodo.id) {
+                      @if (nodo.laneId === lane.id) {
+                        <article class="nodo">
+                          <strong>{{ nodo.nombre }}</strong>
+                          <span>{{ nodo.clase }}</span>
+                        </article>
+                      }
+                    }
+                  </div>
+                </section>
+              }
+            }
+          </div>
+        </article>
+      }
+    </section>
+
+    <section class="seccion-lista">
+      <h2>Arcos del proceso</h2>
+
+      @if (diagrama.arcos.length === 0) {
+        <p>No hay arcos registrados para este proceso.</p>
+      }
+
+      <ul>
+        @for (arco of diagrama.arcos; track arco.id) {
+          <li>
+            Nodo {{ arco.origenId }} → Nodo {{ arco.destinoId }}
+
+            @if (arco.etiqueta) {
+              <span> · {{ arco.etiqueta }}</span>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+
+    @if (diagrama.advertencias.length > 0) {
+      <section class="advertencias">
+        <h2>Advertencias</h2>
+
+        <ul>
+          @for (advertencia of diagrama.advertencias; track advertencia) {
+            <li>{{ advertencia }}</li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</main>
