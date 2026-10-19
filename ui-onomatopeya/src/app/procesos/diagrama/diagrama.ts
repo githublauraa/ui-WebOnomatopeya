@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Diagrama } from '../../models/diagrama.model';
+import { mensajeDeError } from '../../models/error-response.model';
 import { DiagramaService } from '../../services/diagrama.service';
 
 @Component({
@@ -19,7 +20,8 @@ export class DiagramaComponent implements OnInit {
 
   constructor(
     private ruta: ActivatedRoute,
-    private diagramaService: DiagramaService
+    private diagramaService: DiagramaService,
+    private cambios: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -39,11 +41,12 @@ export class DiagramaComponent implements OnInit {
       next: (respuesta) => {
         this.diagrama = respuesta;
         this.cargando = false;
+        this.cambios.markForCheck();
       },
       error: (error) => {
-        console.error('Error al consultar el diagrama:', error);
-        this.error = 'No fue posible cargar el diagrama.';
+        this.error = mensajeDeError(error);
         this.cargando = false;
+        this.cambios.markForCheck();
       }
     });
   }

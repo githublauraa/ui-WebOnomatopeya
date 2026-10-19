@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { mensajeDeError } from '../models/error-response.model';
@@ -38,7 +38,11 @@ export class LoginComponent {
   cargando = false;
   error = '';
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(
+    private auth: AuthService,
+    private router: Router,
+    private cambios: ChangeDetectorRef
+  ) {}
 
   entrar(): void {
     if (!this.correo.trim() || !this.contrasena || this.cargando) return;
@@ -48,11 +52,13 @@ export class LoginComponent {
     this.auth.iniciar({ correo: this.correo.trim(), contrasena: this.contrasena }).subscribe({
       next: () => {
         this.cargando = false;
+        this.cambios.markForCheck();
         void this.router.navigateByUrl('/procesos');
       },
       error: error => {
         this.error = mensajeDeError(error);
         this.cargando = false;
+        this.cambios.markForCheck();
       }
     });
   }
