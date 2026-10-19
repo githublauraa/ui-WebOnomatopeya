@@ -1,0 +1,47 @@
+<main class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Procesos</h1>
+    <button type="button" class="btn btn-outline-secondary" (click)="salir()">Cerrar sesión</button>
+  </div>
+
+  @if (cargando) {
+    <p>Cargando procesos...</p>
+  }
+
+  @if (error) {
+    <div class="alert alert-danger" role="alert">
+      {{ error }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="cargar(pagina)">Reintentar</button>
+    </div>
+  }
+
+  @if (!cargando && !error) {
+    @if (procesos.length === 0) {
+      <p>No hay procesos disponibles.</p>
+    } @else {
+      <div class="list-group">
+        @for (proceso of procesos; track proceso.id) {
+          <a class="list-group-item list-group-item-action" [routerLink]="['/procesos', proceso.id, 'diagrama']">
+            <div class="d-flex justify-content-between">
+              <strong>{{ proceso.nombre }}</strong>
+              <span>{{ proceso.estadoPublicacion }}</span>
+            </div>
+            @if (proceso.categoria) {
+              <small class="text-muted">{{ proceso.categoria }}</small>
+            }
+          </a>
+        }
+      </div>
+    }
+
+    @if (paginas > 1) {
+      <nav class="d-flex align-items-center gap-3 mt-3" aria-label="Páginas de procesos">
+        <button type="button" class="btn btn-outline-primary btn-sm"
+                [disabled]="pagina === 0" (click)="cargar(pagina - 1)">Anterior</button>
+        <span>Página {{ pagina + 1 }} de {{ paginas }} · {{ total }} procesos</span>
+        <button type="button" class="btn btn-outline-primary btn-sm"
+                [disabled]="pagina + 1 >= paginas" (click)="cargar(pagina + 1)">Siguiente</button>
+      </nav>
+    }
+  }
+</main>

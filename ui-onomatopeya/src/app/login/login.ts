@@ -48,7 +48,7 @@ export class LoginComponent {
     this.auth.iniciar({ correo: this.correo.trim(), contrasena: this.contrasena }).subscribe({
       next: () => {
         this.cargando = false;
-        void this.router.navigateByUrl('/usuarios');
+        void this.router.navigateByUrl('/procesos');
       },
       error: error => {
         this.error = mensajeDeError(error);
