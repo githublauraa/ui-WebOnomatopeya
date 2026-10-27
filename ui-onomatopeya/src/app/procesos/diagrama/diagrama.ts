@@ -3,7 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Diagrama } from '../../models/diagrama.model';
 import { mensajeDeError } from '../../models/error-response.model';
-import { DatosProceso } from '../../models/proceso.model';
+import { EditarProceso } from '../../models/proceso.model';
 import { DiagramaService } from '../../services/diagrama.service';
 import { ProcesoService } from '../../services/proceso.service';
 
@@ -88,7 +88,7 @@ export class DiagramaComponent implements OnInit {
     const { descripcion } = this.formulario.getRawValue();
     if (descripcion === (proceso.descripcion ?? '')) return;
 
-    const datos: DatosProceso = {
+    const datos: EditarProceso = {
       nombre: proceso.nombre,
       descripcion,
       categoria: proceso.categoria,

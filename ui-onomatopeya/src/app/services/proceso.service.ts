@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { DatosProceso, PaginaProcesos, Proceso } from '../models/proceso.model';
+import { EditarProceso, PaginaProcesos, Proceso } from '../models/proceso.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProcesoService {
@@ -15,7 +15,7 @@ export class ProcesoService {
     return this.http.get<PaginaProcesos>(this.url, { params });
   }
 
-  actualizar(id: number, datos: DatosProceso): Observable<Proceso> {
+  actualizar(id: number, datos: EditarProceso): Observable<Proceso> {
     return this.http.put<Proceso>(`${this.url}/${id}`, datos);
   }
 }
