@@ -14,6 +14,35 @@
       <h1>{{ diagrama.proceso.nombre }}</h1>
       <p>{{ diagrama.proceso.descripcion }}</p>
 
+      @if (editando) {
+        <form [formGroup]="formulario" (ngSubmit)="guardarDescripcion()" class="mb-3">
+          <label for="descripcion" class="form-label">Descripción</label>
+          <textarea id="descripcion" class="form-control mb-2" rows="3"
+                    formControlName="descripcion"></textarea>
+          @if (formulario.controls.descripcion.touched && formulario.controls.descripcion.hasError('maxlength')) {
+            <small class="text-danger d-block mb-2">La descripción no puede superar 10 000 caracteres.</small>
+          }
+          @if (errorEdicion) {
+            <p class="alert alert-danger" role="alert">{{ errorEdicion }}</p>
+          }
+          <button type="submit" class="btn btn-primary me-2"
+                  [disabled]="guardando || formulario.controls.descripcion.value === (diagrama.proceso.descripcion ?? '')">
+            {{ guardando ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <button type="button" class="btn btn-secondary" [disabled]="guardando" (click)="cancelarEdicion()">
+            Cancelar
+          </button>
+        </form>
+      } @else {
+        <button type="button" class="btn btn-outline-primary mb-3" (click)="iniciarEdicion()">
+          Editar descripción
+        </button>
+      }
+
+      @if (aviso) {
+        <p class="alert alert-success" role="status">{{ aviso }}</p>
+      }
+
       <p>
         <strong>Categoría:</strong> {{ diagrama.proceso.categoria }}
       </p>

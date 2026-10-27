@@ -11,6 +11,9 @@ export interface Proceso {
   version: number;
 }
 
+export type DatosProceso = Omit<Proceso,
+  'id' | 'empresaId' | 'creadorId' | 'activo' | 'fechaCreacion'>;
+
 export interface PaginaProcesos {
   contenido: Proceso[];
   pagina: number;
