@@ -1,5 +1,101 @@
 import { Proceso } from './proceso.model';
 
+export type TipoParticipante = 'EMPRESA' | 'CLIENTE' | 'PROVEEDOR' | 'SISTEMA_EXTERNO';
+export type ClaseNodo = 'ACTIVIDAD' | 'GATEWAY' | 'EVENTO';
+export type TipoActividad = 'TAREA' | 'ENVIO';
+export type TipoGateway = 'EXCLUSIVO' | 'PARALELO' | 'INCLUSIVO';
+export type DireccionGateway = 'DIVERGENCIA' | 'CONVERGENCIA';
+export type TipoEvento = 'INICIO' | 'INTERMEDIO' | 'FIN';
+export type NaturalezaEvento = 'NORMAL' | 'MENSAJE';
+export type OperacionEventoMensaje = 'ENVIO' | 'RECEPCION';
+
+export interface PoolDatosBase {
+  nombre: string;
+  tipoParticipante: TipoParticipante;
+  cajaNegra: boolean;
+  posicionX: number;
+  posicionY: number;
+  ancho: number;
+  alto: number;
+  orden: number;
+}
+
+/** procesoId viaja en la URL al crear. */
+export type PoolCrearDatos = PoolDatosBase;
+
+/** Al editar, la API exige la versión consultada del pool. */
+export interface PoolEditarDatos extends PoolDatosBase {
+  version: number;
+}
+
+export interface LaneDatosBase {
+  rolProcesoId: number;
+  orden: number;
+  altura: number;
+}
+
+/** procesoId y poolId viajan en la URL al crear. */
+export type LaneCrearDatos = LaneDatosBase;
+
+export interface LaneEditarDatos extends LaneDatosBase {
+  version: number;
+}
+
+interface NodoDatosBase {
+  poolId: number;
+  nombre: string;
+  posicionX: number;
+  posicionY: number;
+  ancho: number;
+  alto: number;
+}
+
+export interface ActividadNodoDatos extends NodoDatosBase {
+  clase: 'ACTIVIDAD';
+  laneId: number;
+  tipoActividad: TipoActividad;
+}
+
+export interface GatewayNodoDatos extends NodoDatosBase {
+  clase: 'GATEWAY';
+  tipoGateway: TipoGateway;
+  direccionGateway: DireccionGateway;
+}
+
+export interface EventoNormalNodoDatos extends NodoDatosBase {
+  clase: 'EVENTO';
+  tipoEvento: TipoEvento;
+  naturalezaEvento: 'NORMAL';
+  operacionMensaje?: never;
+}
+
+export interface EventoMensajeNodoDatos extends NodoDatosBase {
+  clase: 'EVENTO';
+  tipoEvento: TipoEvento;
+  naturalezaEvento: 'MENSAJE';
+  operacionMensaje: OperacionEventoMensaje;
+}
+
+/** NodoDatos es una unión: cada clase obliga sus campos condicionales. */
+export type NodoDatos =
+  | ActividadNodoDatos
+  | GatewayNodoDatos
+  | EventoNormalNodoDatos
+  | EventoMensajeNodoDatos;
+
+/** procesoId va en la URL; el arco se define por los nodos que conecta. */
+export interface ArcoDatos {
+  origenId: number;
+  destinoId: number;
+  etiqueta?: string | null;
+  condicionSalida?: string | null;
+}
+
+export interface RetiradaDatos {
+  version: number;
+  confirmar: true;
+}
+
 export interface Diagrama {
   proceso: Proceso;
   pools: Pool[];
