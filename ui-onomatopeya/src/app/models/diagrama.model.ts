@@ -14,7 +14,7 @@ export interface Diagrama {
 export interface Pool {
   id: number;
   nombre: string;
-  tipoParticipante: string;
+  tipoParticipante: 'EMPRESA' | 'CLIENTE' | 'PROVEEDOR' | 'SISTEMA_EXTERNO';
   propietario: boolean;
   cajaNegra: boolean;
   posicionX: number | null;
@@ -37,21 +37,21 @@ export interface Lane {
 
 export interface Nodo {
   id: number;
-  clase: string;
+  clase: 'ACTIVIDAD' | 'GATEWAY' | 'EVENTO';
   poolId: number;
   nombre: string;
   posicionX: number | null;
   posicionY: number | null;
   ancho: number | null;
   alto: number | null;
-  estado: string;
+  estado: 'BORRADOR' | 'ACTIVO' | 'RETIRADO';
   laneId: number | null;
-  tipoActividad: string | null;
-  tipoGateway: string | null;
-  direccionGateway: string | null;
-  tipoEvento: string | null;
-  naturalezaEvento: string | null;
-  operacionMensaje: string | null;
+  tipoActividad: 'TAREA' | 'ENVIO' | null;
+  tipoGateway: 'EXCLUSIVO' | 'PARALELO' | 'INCLUSIVO' | null;
+  direccionGateway: 'DIVERGENCIA' | 'CONVERGENCIA' | null;
+  tipoEvento: 'INICIO' | 'INTERMEDIO' | 'FIN' | null;
+  naturalezaEvento: 'NORMAL' | 'MENSAJE' | null;
+  operacionMensaje: 'ENVIO' | 'RECEPCION' | null;
 }
 
 export interface Arco {
@@ -72,13 +72,13 @@ export interface MensajeDetalle {
 export interface Mensaje {
   id: number;
   nodoId: number;
-  sentido: string;
+  sentido: 'ENVIO' | 'RECEPCION';
   nombre: string;
   origenExterno: boolean;
-  correlacionTipo: string | null;
+  correlacionTipo: 'NEGOCIO' | 'CAMPO' | null;
   correlacionNegocio: string | null;
   correlacionCampoId: number | null;
-  politicaSinCorrespondencia: string | null;
+  politicaSinCorrespondencia: 'DESCARTAR' | 'INICIAR_CASO' | null;
   activo: boolean;
   version: number;
 }
@@ -87,7 +87,7 @@ export interface CampoMensaje {
   id: number;
   mensajeId: number;
   nombre: string;
-  tipoDato: string;
+  tipoDato: 'TEXTO' | 'ENTERO' | 'DECIMAL' | 'BOOLEANO' | 'FECHA' | 'FECHA_HORA';
   orden: number;
   activo: boolean;
   version: number;
@@ -106,10 +106,10 @@ export interface FlujoMensaje {
   procesoId: number;
   poolOrigenId: number;
   poolDestinoId: number | null;
-  nodoOrigenId: number;
+  nodoOrigenId: number | null;
   nodoDestinoId: number | null;
-  tipoDestino: string | null;
-  politicaFallo: string | null;
+  tipoDestino: 'CORREO' | 'SERVICIO_WEB' | 'COLA' | null;
+  politicaFallo: 'CONTINUAR' | 'DERIVAR' | 'FINALIZAR' | null;
   actividadErrorId: number | null;
   activo: boolean;
   version: number;

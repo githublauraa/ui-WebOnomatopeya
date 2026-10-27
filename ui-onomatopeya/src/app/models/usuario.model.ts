@@ -1,7 +1,10 @@
 export interface Usuario {
-  id?: number;
+  id: number;
+  empresaId: number;
   nombre: string;
-  email: string;
-  estado?: string;
-  rol?: string;
+  correo: string;
+  rolAcceso: 'ADMINISTRADOR' | 'EDITOR' | 'LECTURA';
+  estado: 'INVITADO' | 'ACTIVO' | 'INACTIVO';
+  fechaCreacion: string;
+  version: number;
 }
