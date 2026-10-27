@@ -14,32 +14,6 @@
       <h1>{{ diagrama.proceso.nombre }}</h1>
       <p>{{ diagrama.proceso.descripcion }}</p>
 
-      @if (editando) {
-        <form #formulario="ngForm" (ngSubmit)="guardarDescripcion()" class="mb-3">
-          <label for="descripcion" class="form-label">Descripción</label>
-          <textarea id="descripcion" name="descripcion" class="form-control mb-2" rows="3"
-                    maxlength="10000" [(ngModel)]="descripcionEditada"></textarea>
-          @if (errorEdicion) {
-            <p class="alert alert-danger" role="alert">{{ errorEdicion }}</p>
-          }
-          <button type="submit" class="btn btn-primary me-2"
-                  [disabled]="formulario.invalid || guardando || descripcionEditada === (diagrama.proceso.descripcion ?? '')">
-            {{ guardando ? 'Guardando...' : 'Guardar' }}
-          </button>
-          <button type="button" class="btn btn-secondary" [disabled]="guardando" (click)="cancelarEdicion()">
-            Cancelar
-          </button>
-        </form>
-      } @else {
-        <button type="button" class="btn btn-outline-primary mb-3" (click)="iniciarEdicion()">
-          Editar descripción
-        </button>
-      }
-
-      @if (aviso) {
-        <p class="alert alert-success" role="status">{{ aviso }}</p>
-      }
-
       <p>
         <strong>Categoría:</strong> {{ diagrama.proceso.categoria }}
       </p>

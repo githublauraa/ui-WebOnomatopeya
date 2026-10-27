@@ -1,7 +1,5 @@
-import { Proceso } from './proceso.model';
-
 export interface Diagrama {
-  proceso: Proceso;
+  proceso: ProcesoDiagrama;
   pools: Pool[];
   lanes: Lane[];
   nodos: Nodo[];
@@ -9,6 +7,19 @@ export interface Diagrama {
   mensajes: MensajeDetalle[];
   flujos: FlujoMensaje[];
   advertencias: string[];
+}
+
+export interface ProcesoDiagrama {
+  id: number;
+  empresaId: number;
+  creadorId: number;
+  nombre: string;
+  descripcion: string;
+  categoria: string;
+  estadoPublicacion: string;
+  activo: boolean;
+  fechaCreacion: string;
+  version: number;
 }
 
 export interface Pool {
