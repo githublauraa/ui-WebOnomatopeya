@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { Diagrama } from '../../models/diagrama.model';
+import { Arco, Diagrama, Lane, Nodo, Pool } from '../../models/diagrama.model';
 import { mensajeDeError } from '../../models/error-response.model';
 import { EditarProceso } from '../../models/proceso.model';
 import { DiagramaService } from '../../services/diagrama.service';
@@ -110,5 +110,57 @@ export class DiagramaComponent implements OnInit {
         this.cambios.markForCheck();
       }
     });
+  }
+
+  lanesDePool(poolId: number): Lane[] {
+    return (this.diagrama?.lanes ?? [])
+      .filter((lane) => lane.poolId === poolId)
+      .sort((a, b) => a.orden - b.orden);
+  }
+
+  nodosDePool(poolId: number): Nodo[] {
+    return (this.diagrama?.nodos ?? []).filter((nodo) => nodo.poolId === poolId);
+  }
+
+  arcosDePool(poolId: number): Arco[] {
+    return (this.diagrama?.arcos ?? []).filter((arco) => arco.poolId === poolId);
+  }
+
+  altoLienzo(pool: Pool): number {
+    const altoLanes = this.lanesDePool(pool.id)
+      .reduce((total, lane) => total + (lane.altura ?? 0), 0);
+    return Math.max(pool.alto ?? 0, altoLanes, 220);
+  }
+
+  anchoLienzo(pool: Pool): number {
+    return Math.max(pool.ancho ?? 0, 620);
+  }
+
+  posicionLane(lane: Lane): number {
+    return this.lanesDePool(lane.poolId)
+      .filter((actual) => actual.orden < lane.orden)
+      .reduce((total, actual) => total + (actual.altura ?? 0), 0);
+  }
+
+  nodoPorId(nodoId: number): Nodo | undefined {
+    return this.diagrama?.nodos.find((nodo) => nodo.id === nodoId);
+  }
+
+  centroX(nodoId: number): number {
+    const nodo = this.nodoPorId(nodoId);
+    return nodo ? (nodo.posicionX ?? 0) + (nodo.ancho ?? 0) / 2 : 0;
+  }
+
+  centroY(nodoId: number): number {
+    const nodo = this.nodoPorId(nodoId);
+    return nodo ? (nodo.posicionY ?? 0) + (nodo.alto ?? 0) / 2 : 0;
+  }
+
+  puntoMedioX(arco: Arco): number {
+    return (this.centroX(arco.origenId) + this.centroX(arco.destinoId)) / 2;
+  }
+
+  puntoMedioY(arco: Arco): number {
+    return (this.centroY(arco.origenId) + this.centroY(arco.destinoId)) / 2;
   }
 }

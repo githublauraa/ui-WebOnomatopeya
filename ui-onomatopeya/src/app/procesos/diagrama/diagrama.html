@@ -57,55 +57,71 @@
 
       @for (pool of diagrama.pools; track pool.id) {
         <article class="pool">
-          <h3>{{ pool.nombre }}</h3>
+          <header class="cabecera-pool">
+            <div>
+              <h3>{{ pool.nombre }}</h3>
+              <p>{{ pool.tipoParticipante }}</p>
+            </div>
+            @if (pool.cajaNegra) {
+              <span class="etiqueta-caja-negra">Caja negra</span>
+            }
+          </header>
 
-          <p>
-            <strong>Tipo de participante:</strong>
-            {{ pool.tipoParticipante }}
-          </p>
-
-          <div class="lanes">
-            @for (lane of diagrama.lanes; track lane.id) {
-              @if (lane.poolId === pool.id) {
-                <section class="lane">
+          <div class="desplazable">
+            <div class="lienzo-pool"
+                 [style.width.px]="anchoLienzo(pool)"
+                 [style.height.px]="altoLienzo(pool)">
+              @for (lane of lanesDePool(pool.id); track lane.id) {
+                <section class="lane-lienzo"
+                         [style.top.px]="posicionLane(lane)"
+                         [style.height.px]="lane.altura">
                   <h4>{{ lane.nombre }}</h4>
-
-                  <div class="nodos">
-                    @for (nodo of diagrama.nodos; track nodo.id) {
-                      @if (nodo.laneId === lane.id) {
-                        <article class="nodo">
-                          <strong>{{ nodo.nombre }}</strong>
-                          <span>{{ nodo.clase }}</span>
-                        </article>
-                      }
-                    }
-                  </div>
                 </section>
               }
-            }
+
+              <svg class="arcos-lienzo"
+                   [attr.viewBox]="'0 0 ' + anchoLienzo(pool) + ' ' + altoLienzo(pool)"
+                   [attr.width]="anchoLienzo(pool)"
+                   [attr.height]="altoLienzo(pool)"
+                   aria-label="Conexiones entre elementos">
+                <defs>
+                  <marker [attr.id]="'flecha-' + pool.id" markerWidth="8" markerHeight="8"
+                          refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+                    <path d="M 0 0 L 8 4 L 0 8 z"></path>
+                  </marker>
+                </defs>
+                @for (arco of arcosDePool(pool.id); track arco.id) {
+                  <line class="arco"
+                        [attr.x1]="centroX(arco.origenId)"
+                        [attr.y1]="centroY(arco.origenId)"
+                        [attr.x2]="centroX(arco.destinoId)"
+                        [attr.y2]="centroY(arco.destinoId)"
+                        [attr.marker-end]="'url(#flecha-' + pool.id + ')'" />
+                  @if (arco.etiqueta) {
+                    <text class="etiqueta-arco"
+                          [attr.x]="puntoMedioX(arco)"
+                          [attr.y]="puntoMedioY(arco) - 8">{{ arco.etiqueta }}</text>
+                  }
+                }
+              </svg>
+
+              @for (nodo of nodosDePool(pool.id); track nodo.id) {
+                <article class="nodo nodo-lienzo"
+                         [class.actividad]="nodo.clase === 'ACTIVIDAD'"
+                         [class.gateway]="nodo.clase === 'GATEWAY'"
+                         [class.evento]="nodo.clase === 'EVENTO'"
+                         [style.left.px]="nodo.posicionX"
+                         [style.top.px]="nodo.posicionY"
+                         [style.width.px]="nodo.ancho"
+                         [style.height.px]="nodo.alto">
+                  <strong>{{ nodo.nombre }}</strong>
+                  <span>{{ nodo.clase }}</span>
+                </article>
+              }
+            </div>
           </div>
         </article>
       }
-    </section>
-
-    <section class="seccion-lista">
-      <h2>Arcos del proceso</h2>
-
-      @if (diagrama.arcos.length === 0) {
-        <p>No hay arcos registrados para este proceso.</p>
-      }
-
-      <ul>
-        @for (arco of diagrama.arcos; track arco.id) {
-          <li>
-            Nodo {{ arco.origenId }} → Nodo {{ arco.destinoId }}
-
-            @if (arco.etiqueta) {
-              <span> · {{ arco.etiqueta }}</span>
-            }
-          </li>
-        }
-      </ul>
     </section>
 
     @if (diagrama.advertencias.length > 0) {
