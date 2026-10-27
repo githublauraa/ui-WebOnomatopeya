@@ -1,18 +1,66 @@
 <main class="container mt-4">
-  <h1 class="h3 mb-4">Usuarios</h1>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Usuarios</h1>
+    <a class="btn btn-outline-secondary" routerLink="/procesos">Volver a procesos</a>
+  </div>
+
+  <section class="card mb-4">
+    <div class="card-body">
+      <h2 class="h5 card-title">Invitar usuario</h2>
+      <form [formGroup]="formulario" (ngSubmit)="invitar()">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label" for="nombre">Nombre</label>
+            <input id="nombre" class="form-control" formControlName="nombre" maxlength="255">
+            @if (formulario.controls.nombre.touched && formulario.controls.nombre.invalid) {
+              <small class="text-danger">Escribe el nombre del usuario.</small>
+            }
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="correo">Correo</label>
+            <input id="correo" type="email" class="form-control" formControlName="correo" maxlength="255">
+            @if (formulario.controls.correo.touched && formulario.controls.correo.invalid) {
+              <small class="text-danger">Escribe un correo válido.</small>
+            }
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="rolAcceso">Rol de acceso</label>
+            <select id="rolAcceso" class="form-select" formControlName="rolAcceso">
+              <option value="LECTURA">Lectura</option>
+              <option value="EDITOR">Editor</option>
+              <option value="ADMINISTRADOR">Administrador</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3" [disabled]="guardando">
+          {{ guardando ? 'Enviando...' : 'Crear invitación' }}
+        </button>
+      </form>
+    </div>
+  </section>
+
+  @if (error) {
+    <div class="alert alert-danger" role="alert">{{ error }}</div>
+  }
+  @if (mensaje) {
+    <div class="alert alert-success" role="status">{{ mensaje }}</div>
+  }
+  @if (invitacion) {
+    <section class="alert alert-info" aria-label="Datos de la invitación">
+      <p class="mb-1">Token de invitación para {{ invitacion.usuario.correo }}:</p>
+      <code class="user-select-all">{{ invitacion.tokenInvitacion }}</code>
+      <p class="mb-0 mt-2">Vence el {{ invitacion.expiraEn | date:'medium' }}. Cópialo ahora para compartirlo con la persona invitada.</p>
+    </section>
+  }
 
   @if (cargando) {
     <p>Cargando usuarios...</p>
   }
-
-  @if (error) {
-    <div class="alert alert-danger" role="alert">
-      {{ error }}
-      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="cargar()">Reintentar</button>
-    </div>
+  @if (cargaFallida) {
+    <button type="button" class="btn btn-outline-secondary" (click)="cargar()">Reintentar consulta</button>
   }
 
-  @if (!cargando && !error) {
+  @if (!cargando && !cargaFallida) {
     @if (usuarios.length === 0) {
       <p>No hay usuarios registrados en la empresa.</p>
     } @else {
@@ -23,6 +71,7 @@
             <th>Correo</th>
             <th>Rol</th>
             <th>Estado</th>
+            <th>Acción</th>
           </tr>
         </thead>
         <tbody>
@@ -32,6 +81,18 @@
               <td>{{ usuario.correo }}</td>
               <td>{{ usuario.rolAcceso }}</td>
               <td>{{ usuario.estado }}</td>
+              <td>
+                @if (usuario.estado !== 'INACTIVO') {
+                  @if (confirmandoId === usuario.id) {
+                    <button type="button" class="btn btn-sm btn-danger me-2" (click)="desactivar(usuario)">Confirmar</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="confirmandoId = null">Cancelar</button>
+                  } @else {
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                            [disabled]="desactivandoId === usuario.id"
+                            (click)="confirmandoId = usuario.id">Desactivar</button>
+                  }
+                }
+              </td>
             </tr>
           }
         </tbody>
