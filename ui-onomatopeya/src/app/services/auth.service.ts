@@ -2,17 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-
-export interface Credenciales {
-  correo: string;
-  contrasena: string;
-}
-
-export interface Sesion {
-  token: string;
-  tipo: string;
-  expiraEn: string;
-}
+import { Credenciales, Sesion } from '../models/sesion.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
