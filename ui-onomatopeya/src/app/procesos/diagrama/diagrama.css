@@ -233,6 +233,91 @@ marker path {
     border-radius: 50%;
 }
 
+.mensajes {
+    margin-bottom: 24px;
+    padding: 24px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.mensajes h2 {
+    margin-top: 0;
+    color: #213a63;
+}
+
+.ayuda-mensajes {
+    color: #58677b;
+}
+
+.lista-flujos {
+    display: grid;
+    gap: 12px;
+}
+
+.flujo-mensaje {
+    display: grid;
+    grid-template-columns: minmax(140px, 1fr) minmax(180px, 2fr) minmax(140px, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid #c8d4e5;
+    border-radius: 6px;
+    background: #fafcff;
+}
+
+.extremo-mensaje {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.extremo-mensaje span {
+    color: #58677b;
+    font-size: 13px;
+}
+
+.conexion-mensaje {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 42px;
+}
+
+.linea-punteada {
+    flex: 1;
+    border-top: 2px dashed #6f559a;
+}
+
+.punta-mensaje {
+    margin-left: -1px;
+    color: #6f559a;
+    font-size: 15px;
+}
+
+.nombre-mensaje {
+    position: absolute;
+    top: -3px;
+    left: 50%;
+    max-width: 90%;
+    padding: 0 6px;
+    overflow: hidden;
+    color: #51377b;
+    background: #fafcff;
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+.correlacion {
+    grid-column: 2 / 4;
+    margin: -4px 0 0;
+    color: #58677b;
+    font-size: 13px;
+}
+
 @media (max-width: 600px) {
     .zona-pools,
     .encabezado-proceso,
@@ -242,5 +327,17 @@ marker path {
 
     .desplazable {
         padding: 12px;
+    }
+
+    .mensajes {
+        padding: 16px;
+    }
+
+    .flujo-mensaje {
+        grid-template-columns: 1fr;
+    }
+
+    .correlacion {
+        grid-column: auto;
     }
 }

@@ -124,6 +124,39 @@
       }
     </section>
 
+    @if (diagrama.flujos.length > 0) {
+      <section class="mensajes">
+        <h2>Mensajes entre participantes</h2>
+        <p class="ayuda-mensajes">Las flechas punteadas representan comunicación entre pools, no secuencia interna del proceso.</p>
+
+        <div class="lista-flujos">
+          @for (flujo of diagrama.flujos; track flujo.id) {
+            <article class="flujo-mensaje">
+              <div class="extremo-mensaje">
+                <strong>{{ nombrePool(flujo.poolOrigenId) }}</strong>
+                <span>{{ nombreNodo(flujo.nodoOrigenId) }}</span>
+              </div>
+
+              <div class="conexion-mensaje" aria-label="Flujo de mensaje">
+                <span class="linea-punteada"></span>
+                <span class="punta-mensaje">▶</span>
+                <span class="nombre-mensaje">{{ etiquetaFlujo(flujo) }}</span>
+              </div>
+
+              <div class="extremo-mensaje">
+                <strong>{{ nombrePool(flujo.poolDestinoId) }}</strong>
+                <span>{{ nombreNodo(flujo.nodoDestinoId) }}</span>
+              </div>
+
+              @if (correlacionFlujo(flujo); as correlacion) {
+                <p class="correlacion">Correlación: {{ correlacion }}</p>
+              }
+            </article>
+          }
+        </div>
+      </section>
+    }
+
     @if (diagrama.advertencias.length > 0) {
       <section class="advertencias">
         <h2>Advertencias</h2>

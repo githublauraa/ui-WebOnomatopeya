@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { Arco, Diagrama, Lane, Nodo, Pool } from '../../models/diagrama.model';
+import { Arco, Diagrama, FlujoMensaje, Lane, MensajeDetalle, Nodo, Pool } from '../../models/diagrama.model';
 import { mensajeDeError } from '../../models/error-response.model';
 import { EditarProceso } from '../../models/proceso.model';
 import { DiagramaService } from '../../services/diagrama.service';
@@ -162,5 +162,31 @@ export class DiagramaComponent implements OnInit {
 
   puntoMedioY(arco: Arco): number {
     return (this.centroY(arco.origenId) + this.centroY(arco.destinoId)) / 2;
+  }
+
+  nombrePool(poolId: number | null): string {
+    if (poolId === null) return 'participante externo';
+    return this.diagrama?.pools.find((pool) => pool.id === poolId)?.nombre ?? `Pool ${poolId}`;
+  }
+
+  nombreNodo(nodoId: number | null): string {
+    if (nodoId === null) return 'participante externo';
+    return this.nodoPorId(nodoId)?.nombre ?? `Nodo ${nodoId}`;
+  }
+
+  mensajeDeFlujo(flujo: FlujoMensaje): MensajeDetalle | undefined {
+    return (this.diagrama?.mensajes ?? []).find(({ mensaje }) =>
+      mensaje.nodoId === flujo.nodoOrigenId || mensaje.nodoId === flujo.nodoDestinoId
+    );
+  }
+
+  etiquetaFlujo(flujo: FlujoMensaje): string {
+    return this.mensajeDeFlujo(flujo)?.mensaje.nombre ?? 'Mensaje sin nombre';
+  }
+
+  correlacionFlujo(flujo: FlujoMensaje): string | null {
+    const detalle = this.mensajeDeFlujo(flujo);
+    if (!detalle) return null;
+    return detalle.mensaje.correlacionNegocio ?? detalle.campos[0]?.nombre ?? null;
   }
 }
