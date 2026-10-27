@@ -1,7 +1,10 @@
 <main class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0">Procesos</h1>
-    <button type="button" class="btn btn-outline-secondary" (click)="salir()">Cerrar sesión</button>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-primary" routerLink="/empresas">Mi empresa</a>
+      <button type="button" class="btn btn-outline-secondary" (click)="salir()">Cerrar sesión</button>
+    </div>
   </div>
 
   @if (cargando) {

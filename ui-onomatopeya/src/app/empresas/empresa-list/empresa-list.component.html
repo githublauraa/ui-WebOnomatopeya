@@ -1,0 +1,33 @@
+<main class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Mi empresa</h1>
+    <a class="btn btn-outline-secondary" routerLink="/procesos">Volver a procesos</a>
+  </div>
+
+  @if (cargando) {
+    <p>Cargando empresa...</p>
+  }
+
+  @if (error) {
+    <div class="alert alert-danger" role="alert">
+      {{ error }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="cargar()">Reintentar</button>
+    </div>
+  }
+
+  @if (!cargando && !error) {
+    @if (empresas.length === 0) {
+      <p>No hay una empresa disponible para este usuario.</p>
+    } @else {
+      @for (empresa of empresas; track empresa.id) {
+        <section class="card mb-3">
+          <div class="card-body">
+            <h2 class="h5 card-title">{{ empresa.nombre }}</h2>
+            <p class="card-text mb-1">NIT: {{ empresa.nit }}</p>
+            <p class="card-text mb-0">Correo de contacto: {{ empresa.correoContacto }}</p>
+          </div>
+        </section>
+      }
+    }
+  }
+</main>
