@@ -1,9 +1,23 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { CrearProceso, EditarProceso, Proceso } from '../models/proceso.model';
 import { ProcesoService } from './proceso.service';
 
 describe('ProcesoService', () => {
+  const proceso: Proceso = {
+    id: 7,
+    empresaId: 1,
+    creadorId: 2,
+    nombre: 'Compras',
+    descripcion: null,
+    categoria: 'Administración',
+    estadoPublicacion: 'BORRADOR',
+    activo: true,
+    fechaCreacion: '2026-10-27T10:00:00Z',
+    version: 0
+  };
+
   let servicio: ProcesoService;
   let peticiones: HttpTestingController;
 
@@ -22,7 +36,7 @@ describe('ProcesoService', () => {
 
     const consulta = peticiones.expectOne('/api/procesos?pagina=0&tamanio=10');
     expect(consulta.request.method).toBe('GET');
-    consulta.flush({ contenido: [{ id: 1, nombre: 'Compras' }], pagina: 0, tamanio: 10, total: 1, paginas: 1 });
+    consulta.flush({ contenido: [proceso], pagina: 0, tamanio: 10, total: 1, paginas: 1 });
   });
 
   it('envía la página solicitada', () => {
@@ -31,5 +45,44 @@ describe('ProcesoService', () => {
     const consulta = peticiones.expectOne('/api/procesos?pagina=2&tamanio=10');
     expect(consulta.request.method).toBe('GET');
     consulta.flush({ contenido: [], pagina: 2, tamanio: 10, total: 20, paginas: 2 });
+  });
+
+  it('consulta un proceso por su identificador', () => {
+    servicio.consultar(7).subscribe(proceso => expect(proceso.nombre).toBe('Compras'));
+
+    const consulta = peticiones.expectOne('/api/procesos/7');
+    expect(consulta.request.method).toBe('GET');
+    consulta.flush(proceso);
+  });
+
+  it('crea un proceso en borrador sin enviar campos de respuesta', () => {
+    const datos: CrearProceso = {
+      nombre: 'Compras',
+      descripcion: null,
+      categoria: 'Administración',
+      estadoPublicacion: 'BORRADOR'
+    };
+    servicio.crear(datos).subscribe(proceso => expect(proceso.id).toBe(7));
+
+    const consulta = peticiones.expectOne('/api/procesos');
+    expect(consulta.request.method).toBe('POST');
+    expect(consulta.request.body).toEqual(datos);
+    consulta.flush(proceso);
+  });
+
+  it('actualiza un proceso con la versión consultada', () => {
+    const datos: EditarProceso = {
+      nombre: 'Compras',
+      descripcion: 'Nueva descripción',
+      categoria: null,
+      estadoPublicacion: 'BORRADOR',
+      version: 3
+    };
+    servicio.actualizar(7, datos).subscribe(proceso => expect(proceso.version).toBe(4));
+
+    const consulta = peticiones.expectOne('/api/procesos/7');
+    expect(consulta.request.method).toBe('PUT');
+    expect(consulta.request.body).toEqual(datos);
+    consulta.flush({ ...proceso, ...datos, version: 4 });
   });
 });
