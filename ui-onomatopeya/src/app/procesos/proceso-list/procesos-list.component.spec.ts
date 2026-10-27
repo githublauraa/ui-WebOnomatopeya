@@ -28,7 +28,7 @@ describe('ProcesosListComponent', () => {
     await vista.whenStable();
     vista.detectChanges();
 
-    const enlace = (vista.nativeElement as HTMLElement).querySelector('a.list-group-item');
+    const enlace = (vista.nativeElement as HTMLElement).querySelector('.list-group-item a');
     expect(enlace?.textContent).toContain('Compras');
     expect(enlace?.getAttribute('href')).toBe('/procesos/7/diagrama');
   });

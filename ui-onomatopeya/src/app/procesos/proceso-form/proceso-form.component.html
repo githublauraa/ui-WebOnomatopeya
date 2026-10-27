@@ -1,0 +1,65 @@
+<main class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ editando ? 'Editar proceso' : 'Crear proceso' }}</h1>
+    <a class="btn btn-outline-secondary" routerLink="/procesos">Volver a procesos</a>
+  </div>
+
+  @if (cargando) {
+    <p>Cargando proceso...</p>
+  }
+
+  @if (error) {
+    <div class="alert alert-danger" role="alert">{{ error }}</div>
+  }
+
+  @if (guardado) {
+    <div class="alert alert-success" role="status">
+      Proceso {{ editando ? 'actualizado' : 'creado' }}: {{ guardado.nombre }} (ID {{ guardado.id }}).
+      <a [routerLink]="['/procesos', guardado.id, 'diagrama']">Consultar proceso</a>
+    </div>
+  }
+
+  @if (!cargando && (!editando || proceso)) {
+    <form [formGroup]="formulario" (ngSubmit)="guardar()">
+      <div class="mb-3">
+        <label class="form-label" for="nombreProceso">Nombre</label>
+        <input id="nombreProceso" class="form-control" formControlName="nombre" maxlength="150">
+        @if (formulario.controls.nombre.touched && formulario.controls.nombre.invalid) {
+          <small class="text-danger">Escribe un nombre de máximo 150 caracteres.</small>
+        }
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="descripcionProceso">Descripción</label>
+        <textarea id="descripcionProceso" class="form-control" formControlName="descripcion" rows="4"></textarea>
+        @if (formulario.controls.descripcion.touched && formulario.controls.descripcion.invalid) {
+          <small class="text-danger">La descripción no puede superar 10 000 caracteres.</small>
+        }
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="categoriaProceso">Categoría</label>
+        <input id="categoriaProceso" class="form-control" formControlName="categoria" maxlength="100">
+        @if (formulario.controls.categoria.touched && formulario.controls.categoria.invalid) {
+          <small class="text-danger">La categoría no puede superar 100 caracteres.</small>
+        }
+      </div>
+
+      @if (editando) {
+        <div class="mb-3">
+          <label class="form-label" for="estadoProceso">Estado</label>
+          <select id="estadoProceso" class="form-select" formControlName="estadoPublicacion">
+            <option value="BORRADOR">Borrador</option>
+            <option value="PUBLICADO">Publicado</option>
+          </select>
+        </div>
+      } @else {
+        <p>El proceso se guardará como borrador.</p>
+      }
+
+      <button type="submit" class="btn btn-primary" [disabled]="guardando || (!!guardado && !editando)">
+        {{ guardando ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </form>
+  }
+</main>

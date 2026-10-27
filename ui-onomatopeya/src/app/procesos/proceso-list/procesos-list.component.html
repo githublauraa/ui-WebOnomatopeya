@@ -2,6 +2,7 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0">Procesos</h1>
     <div class="d-flex gap-2">
+      <a class="btn btn-primary" routerLink="/procesos/nuevo">Crear proceso</a>
       <a class="btn btn-outline-primary" routerLink="/empresas">Mi empresa</a>
       <a class="btn btn-outline-primary" routerLink="/usuarios">Usuarios</a>
       <button type="button" class="btn btn-outline-secondary" (click)="salir()">Cerrar sesión</button>
@@ -25,15 +26,16 @@
     } @else {
       <div class="list-group">
         @for (proceso of procesos; track proceso.id) {
-          <a class="list-group-item list-group-item-action" [routerLink]="['/procesos', proceso.id, 'diagrama']">
-            <div class="d-flex justify-content-between">
-              <strong>{{ proceso.nombre }}</strong>
-              <span>{{ proceso.estadoPublicacion }}</span>
+          <div class="list-group-item d-flex justify-content-between align-items-center gap-3">
+            <div>
+              <a [routerLink]="['/procesos', proceso.id, 'diagrama']"><strong>{{ proceso.nombre }}</strong></a>
+              <span class="ms-2">{{ proceso.estadoPublicacion }}</span>
+              @if (proceso.categoria) {
+                <small class="text-muted d-block">{{ proceso.categoria }}</small>
+              }
             </div>
-            @if (proceso.categoria) {
-              <small class="text-muted">{{ proceso.categoria }}</small>
-            }
-          </a>
+            <a class="btn btn-outline-primary btn-sm" [routerLink]="['/procesos', proceso.id, 'editar']">Editar</a>
+          </div>
         }
       </div>
     }
