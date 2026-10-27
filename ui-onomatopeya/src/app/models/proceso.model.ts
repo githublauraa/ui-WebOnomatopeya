@@ -11,6 +11,14 @@ export interface Proceso {
   version: number;
 }
 
+export interface DatosProceso {
+  nombre: string;
+  descripcion: string | null;
+  categoria: string | null;
+  estadoPublicacion: Proceso['estadoPublicacion'];
+  version: number;
+}
+
 export interface PaginaProcesos {
   contenido: Proceso[];
   pagina: number;
