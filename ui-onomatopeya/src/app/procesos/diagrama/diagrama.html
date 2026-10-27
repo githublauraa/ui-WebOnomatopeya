@@ -53,7 +53,49 @@
     </section>
 
     <section class="zona-pools">
-      <h2>Diagrama del proceso</h2>
+      <div class="titulo-seccion">
+        <h2>Diagrama del proceso</h2>
+        <button type="button" class="btn btn-outline-primary" (click)="iniciarCreacionPool()">
+          Agregar pool
+        </button>
+      </div>
+
+      @if (creandoPool) {
+        <form class="formulario-pool" [formGroup]="formularioPool" (ngSubmit)="crearPool()">
+          <h3>Nuevo pool</h3>
+          <div class="campos-pool">
+            <label>Nombre
+              <input class="form-control" type="text" formControlName="nombre">
+            </label>
+            <label>Tipo de participante
+              <select class="form-select" formControlName="tipoParticipante">
+                <option value="EMPRESA">Empresa</option>
+                <option value="CLIENTE">Cliente</option>
+                <option value="PROVEEDOR">Proveedor</option>
+                <option value="SISTEMA_EXTERNO">Sistema externo</option>
+              </select>
+            </label>
+            <label>Posición X<input class="form-control" type="number" min="0" formControlName="posicionX"></label>
+            <label>Posición Y<input class="form-control" type="number" min="0" formControlName="posicionY"></label>
+            <label>Ancho<input class="form-control" type="number" min="1" formControlName="ancho"></label>
+            <label>Alto<input class="form-control" type="number" min="1" formControlName="alto"></label>
+            <label>Orden<input class="form-control" type="number" min="0" formControlName="orden"></label>
+            <label class="campo-checkbox"><input type="checkbox" formControlName="cajaNegra"> Es caja negra</label>
+          </div>
+          @if (formularioPool.invalid && formularioPool.touched) {
+            <p class="texto-error">Revisa el nombre y los valores numéricos del pool.</p>
+          }
+          @if (errorPool) {
+            <p class="texto-error">{{ errorPool }}</p>
+          }
+          <button type="submit" class="btn btn-primary me-2" [disabled]="guardandoPool">
+            {{ guardandoPool ? 'Guardando...' : 'Crear pool' }}
+          </button>
+          <button type="button" class="btn btn-secondary" [disabled]="guardandoPool" (click)="cancelarCreacionPool()">
+            Cancelar
+          </button>
+        </form>
+      }
 
       @for (pool of diagrama.pools; track pool.id) {
         <article class="pool">

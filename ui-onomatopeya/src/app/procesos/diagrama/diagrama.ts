@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { Arco, Diagrama, FlujoMensaje, Lane, MensajeDetalle, Nodo, Pool } from '../../models/diagrama.model';
+import { Arco, Diagrama, FlujoMensaje, Lane, MensajeDetalle, Nodo, Pool, PoolCrearDatos } from '../../models/diagrama.model';
 import { mensajeDeError } from '../../models/error-response.model';
 import { EditarProceso } from '../../models/proceso.model';
 import { DiagramaService } from '../../services/diagrama.service';
@@ -27,9 +27,22 @@ export class DiagramaComponent implements OnInit {
   editando = false;
   guardando = false;
   errorEdicion = '';
+  errorPool = '';
   aviso = '';
+  creandoPool = false;
+  guardandoPool = false;
   formulario = this.fb.nonNullable.group({
     descripcion: ['', Validators.maxLength(10000)]
+  });
+  formularioPool = this.fb.nonNullable.group({
+    nombre: ['', [Validators.required, Validators.maxLength(150)]],
+    tipoParticipante: ['EMPRESA', Validators.required],
+    cajaNegra: false,
+    posicionX: [0, [Validators.required, Validators.min(0)]],
+    posicionY: [0, [Validators.required, Validators.min(0)]],
+    ancho: [1000, [Validators.required, Validators.min(1)]],
+    alto: [400, [Validators.required, Validators.min(1)]],
+    orden: [1, [Validators.required, Validators.min(0)]]
   });
 
   ngOnInit(): void {
@@ -75,6 +88,52 @@ export class DiagramaComponent implements OnInit {
   cancelarEdicion(): void {
     this.editando = false;
     this.errorEdicion = '';
+  }
+
+  iniciarCreacionPool(): void {
+    const orden = Math.max(0, ...(this.diagrama?.pools ?? []).map((pool) => pool.orden)) + 1;
+    this.formularioPool.reset({
+      nombre: '', tipoParticipante: 'EMPRESA', cajaNegra: false,
+      posicionX: 0, posicionY: 0, ancho: 1000, alto: 400, orden
+    });
+    this.errorPool = '';
+    this.aviso = '';
+    this.creandoPool = true;
+  }
+
+  cancelarCreacionPool(): void {
+    this.creandoPool = false;
+    this.errorPool = '';
+  }
+
+  crearPool(): void {
+    if (!this.diagrama || this.guardandoPool) return;
+    if (this.formularioPool.invalid) {
+      this.formularioPool.markAllAsTouched();
+      return;
+    }
+
+    const valores = this.formularioPool.getRawValue();
+    const datos: PoolCrearDatos = {
+      ...valores,
+      tipoParticipante: valores.tipoParticipante as PoolCrearDatos['tipoParticipante']
+    };
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoPool = true;
+    this.errorPool = '';
+    this.diagramaService.crearPool(procesoId, datos).subscribe({
+      next: () => {
+        this.guardandoPool = false;
+        this.creandoPool = false;
+        this.aviso = 'Pool creado correctamente.';
+        this.cargarDiagrama(procesoId);
+      },
+      error: (error) => {
+        this.errorPool = mensajeDeError(error);
+        this.guardandoPool = false;
+        this.cambios.markForCheck();
+      }
+    });
   }
 
   guardarDescripcion(): void {

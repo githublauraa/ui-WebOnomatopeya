@@ -134,6 +134,53 @@
     margin: 0 0 4px;
 }
 
+.titulo-seccion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.titulo-seccion h2 {
+    margin: 0;
+}
+
+.formulario-pool {
+    margin-top: 18px;
+    padding: 18px;
+    border: 1px solid #aebed3;
+    border-radius: 6px;
+    background: #f6f9fd;
+}
+
+.formulario-pool h3 {
+    margin-top: 0;
+}
+
+.campos-pool {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.campos-pool label {
+    display: grid;
+    gap: 5px;
+    color: #425b80;
+    font-size: 14px;
+}
+
+.campos-pool .campo-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.texto-error {
+    color: #a11c1c;
+}
+
 .cabecera-pool p {
     margin: 0;
     color: #58677b;
@@ -327,6 +374,15 @@ marker path {
 
     .desplazable {
         padding: 12px;
+    }
+
+    .titulo-seccion {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .campos-pool {
+        grid-template-columns: 1fr;
     }
 
     .mensajes {
