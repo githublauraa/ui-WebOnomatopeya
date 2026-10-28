@@ -365,12 +365,26 @@ marker path {
 }
 
 .nodo.gateway strong,
-.nodo.gateway span {
+.nodo.gateway span,
+.nodo.gateway .acciones-nodo {
     transform: rotate(-45deg);
 }
 
 .nodo.evento {
     border-radius: 50%;
+}
+
+.acciones-nodo {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.acciones-nodo .btn {
+    padding: 1px 4px;
+    font-size: 10px;
+    line-height: 1.2;
 }
 
 .mensajes {

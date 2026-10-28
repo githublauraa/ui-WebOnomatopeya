@@ -66,6 +66,9 @@
       @if (errorLane && creandoLaneParaPoolId === null) {
         <p class="texto-error mt-3">{{ errorLane }}</p>
       }
+      @if (errorNodo && creandoNodoParaPoolId === null) {
+        <p class="texto-error mt-3">{{ errorNodo }}</p>
+      }
 
       @if (creandoPool || editandoPoolId !== null) {
         <form class="formulario-pool" [formGroup]="formularioPool" (ngSubmit)="guardarPool()">
@@ -171,8 +174,8 @@
           }
 
           @if (creandoNodoParaPoolId === pool.id) {
-            <form class="formulario-nodo" [formGroup]="formularioNodo" (ngSubmit)="crearNodo()">
-              <h4>Nuevo nodo</h4>
+            <form class="formulario-nodo" [formGroup]="formularioNodo" (ngSubmit)="guardarNodo()">
+              <h4>{{ editandoNodoId === null ? 'Nuevo nodo' : 'Editar nodo' }}</h4>
               <div class="campos-nodo">
                 <label>Clase
                   <select class="form-select" formControlName="clase">
@@ -247,7 +250,7 @@
                 <p class="texto-error">{{ errorNodo }}</p>
               }
               <button type="submit" class="btn btn-primary me-2" [disabled]="guardandoNodo">
-                {{ guardandoNodo ? 'Guardando...' : 'Crear nodo' }}
+                {{ guardandoNodo ? 'Guardando...' : (editandoNodoId === null ? 'Crear nodo' : 'Guardar cambios') }}
               </button>
               <button type="button" class="btn btn-secondary" [disabled]="guardandoNodo" (click)="cancelarCreacionNodo()">
                 Cancelar
@@ -346,6 +349,10 @@
                          [style.height.px]="nodo.alto">
                   <strong>{{ nodo.nombre }}</strong>
                   <span>{{ nodo.clase }}</span>
+                  <div class="acciones-nodo">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="iniciarEdicionNodo(nodo)">Editar</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="retirarNodo(nodo)">Retirar</button>
+                  </div>
                 </article>
               }
             </div>

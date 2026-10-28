@@ -44,6 +44,7 @@ export class DiagramaComponent implements OnInit {
   editandoLaneId: number | null = null;
   guardandoLane = false;
   creandoNodoParaPoolId: number | null = null;
+  editandoNodoId: number | null = null;
   guardandoNodo = false;
   creandoArcoParaPoolId: number | null = null;
   guardandoArco = false;
@@ -368,12 +369,41 @@ export class DiagramaComponent implements OnInit {
     });
     this.errorNodo = '';
     this.aviso = '';
+    this.editandoNodoId = null;
     this.creandoNodoParaPoolId = pool.id;
   }
 
   cancelarCreacionNodo(): void {
     this.creandoNodoParaPoolId = null;
+    this.editandoNodoId = null;
     this.errorNodo = '';
+  }
+
+  iniciarEdicionNodo(nodo: Nodo): void {
+    this.formularioNodo.reset({
+      clase: nodo.clase,
+      nombre: nodo.nombre,
+      posicionX: nodo.posicionX ?? 0,
+      posicionY: nodo.posicionY ?? 0,
+      ancho: nodo.ancho ?? 140,
+      alto: nodo.alto ?? 70,
+      laneId: nodo.laneId ?? 0,
+      tipoActividad: nodo.tipoActividad ?? 'TAREA',
+      tipoGateway: nodo.tipoGateway ?? 'EXCLUSIVO',
+      direccionGateway: nodo.direccionGateway ?? 'DIVERGENCIA',
+      tipoEvento: nodo.tipoEvento ?? 'INICIO',
+      naturalezaEvento: nodo.naturalezaEvento ?? 'NORMAL',
+      operacionMensaje: nodo.operacionMensaje ?? 'ENVIO'
+    });
+    this.creandoNodoParaPoolId = nodo.poolId;
+    this.editandoNodoId = nodo.id;
+    this.errorNodo = '';
+    this.aviso = '';
+  }
+
+  guardarNodo(): void {
+    if (this.editandoNodoId === null) this.crearNodo();
+    else this.actualizarNodo(this.editandoNodoId);
   }
 
   crearNodo(): void {
@@ -383,33 +413,8 @@ export class DiagramaComponent implements OnInit {
       return;
     }
 
-    const valores = this.formularioNodo.getRawValue();
-    const comunes = {
-      poolId: this.creandoNodoParaPoolId,
-      nombre: valores.nombre,
-      posicionX: valores.posicionX,
-      posicionY: valores.posicionY,
-      ancho: valores.ancho,
-      alto: valores.alto
-    };
-    let datos: NodoDatos;
-    if (valores.clase === 'ACTIVIDAD') {
-      if (valores.laneId < 1) {
-        this.errorNodo = 'Una actividad debe pertenecer a una lane activa.';
-        return;
-      }
-      datos = { ...comunes, clase: 'ACTIVIDAD', laneId: valores.laneId,
-        tipoActividad: valores.tipoActividad as TipoActividad };
-    } else if (valores.clase === 'GATEWAY') {
-      datos = { ...comunes, clase: 'GATEWAY', tipoGateway: valores.tipoGateway as TipoGateway,
-        direccionGateway: valores.direccionGateway as DireccionGateway };
-    } else if (valores.naturalezaEvento === 'MENSAJE') {
-      datos = { ...comunes, clase: 'EVENTO', tipoEvento: valores.tipoEvento as TipoEvento,
-        naturalezaEvento: 'MENSAJE', operacionMensaje: valores.operacionMensaje as OperacionEventoMensaje };
-    } else {
-      datos = { ...comunes, clase: 'EVENTO', tipoEvento: valores.tipoEvento as TipoEvento,
-        naturalezaEvento: 'NORMAL' };
-    }
+    const datos = this.datosNodo();
+    if (!datos) return;
 
     const procesoId = this.diagrama.proceso.id;
     this.guardandoNodo = true;
@@ -427,6 +432,87 @@ export class DiagramaComponent implements OnInit {
         this.cambios.markForCheck();
       }
     });
+  }
+
+  actualizarNodo(nodoId: number): void {
+    if (!this.diagrama || this.guardandoNodo) return;
+    if (this.formularioNodo.invalid) {
+      this.formularioNodo.markAllAsTouched();
+      return;
+    }
+    const datos = this.datosNodo();
+    if (!datos) return;
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoNodo = true;
+    this.errorNodo = '';
+    this.diagramaService.editarNodo(procesoId, nodoId, datos).subscribe({
+      next: () => {
+        this.guardandoNodo = false;
+        this.editandoNodoId = null;
+        this.creandoNodoParaPoolId = null;
+        this.aviso = 'Nodo actualizado correctamente.';
+        this.cargarDiagrama(procesoId);
+      },
+      error: (error) => {
+        this.errorNodo = mensajeDeError(error);
+        this.guardandoNodo = false;
+        this.cambios.markForCheck();
+      }
+    });
+  }
+
+  retirarNodo(nodo: Nodo): void {
+    if (!this.diagrama || this.guardandoNodo) return;
+    if (!window.confirm(`¿Retirar el nodo "${nodo.nombre}" y sus conexiones? Esta acción no borra su historial.`)) return;
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoNodo = true;
+    this.errorNodo = '';
+    this.diagramaService.retirarNodo(procesoId, nodo.id, {
+      version: this.diagrama.proceso.version,
+      confirmar: true
+    }).subscribe({
+      next: () => {
+        this.guardandoNodo = false;
+        this.aviso = 'Nodo retirado correctamente.';
+        this.cargarDiagrama(procesoId);
+      },
+      error: (error) => {
+        this.errorNodo = mensajeDeError(error);
+        this.guardandoNodo = false;
+        this.cambios.markForCheck();
+      }
+    });
+  }
+
+  private datosNodo(): NodoDatos | null {
+    if (this.creandoNodoParaPoolId === null) return null;
+    const valores = this.formularioNodo.getRawValue();
+    const comunes = {
+      poolId: this.creandoNodoParaPoolId,
+      nombre: valores.nombre,
+      posicionX: valores.posicionX,
+      posicionY: valores.posicionY,
+      ancho: valores.ancho,
+      alto: valores.alto
+    };
+    if (valores.clase === 'ACTIVIDAD') {
+      if (valores.laneId < 1) {
+        this.errorNodo = 'Una actividad debe pertenecer a una lane activa.';
+        return null;
+      }
+      return { ...comunes, clase: 'ACTIVIDAD', laneId: valores.laneId,
+        tipoActividad: valores.tipoActividad as TipoActividad };
+    }
+    if (valores.clase === 'GATEWAY') {
+      return { ...comunes, clase: 'GATEWAY', tipoGateway: valores.tipoGateway as TipoGateway,
+        direccionGateway: valores.direccionGateway as DireccionGateway };
+    }
+    if (valores.naturalezaEvento === 'MENSAJE') {
+      return { ...comunes, clase: 'EVENTO', tipoEvento: valores.tipoEvento as TipoEvento,
+        naturalezaEvento: 'MENSAJE', operacionMensaje: valores.operacionMensaje as OperacionEventoMensaje };
+    }
+    return { ...comunes, clase: 'EVENTO', tipoEvento: valores.tipoEvento as TipoEvento,
+      naturalezaEvento: 'NORMAL' };
   }
 
   iniciarCreacionArco(pool: Pool): void {
