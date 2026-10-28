@@ -104,10 +104,50 @@
               <h3>{{ pool.nombre }}</h3>
               <p>{{ pool.tipoParticipante }}</p>
             </div>
-            @if (pool.cajaNegra) {
-              <span class="etiqueta-caja-negra">Caja negra</span>
-            }
+            <div class="acciones-pool">
+              @if (pool.cajaNegra) {
+                <span class="etiqueta-caja-negra">Caja negra</span>
+              }
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionLane(pool)">
+                Agregar lane
+              </button>
+            </div>
           </header>
+
+          @if (creandoLaneParaPoolId === pool.id) {
+            <form class="formulario-lane" [formGroup]="formularioLane" (ngSubmit)="crearLane()">
+              <h4>Nueva lane</h4>
+              @if (cargandoRoles) {
+                <p>Cargando roles de proceso...</p>
+              } @else if (roles.length === 0) {
+                <p class="texto-error">No hay roles disponibles. Crea un rol de proceso antes de crear una lane.</p>
+              } @else {
+                <div class="campos-lane">
+                  <label>Rol responsable
+                    <select class="form-select" formControlName="rolProcesoId">
+                      @for (rol of roles; track rol.id) {
+                        <option [ngValue]="rol.id">{{ rol.nombre }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label>Orden<input class="form-control" type="number" min="0" formControlName="orden"></label>
+                  <label>Altura<input class="form-control" type="number" min="1" formControlName="altura"></label>
+                </div>
+                @if (formularioLane.invalid && formularioLane.touched) {
+                  <p class="texto-error">Revisa los datos de la lane.</p>
+                }
+                @if (errorLane) {
+                  <p class="texto-error">{{ errorLane }}</p>
+                }
+                <button type="submit" class="btn btn-primary me-2" [disabled]="guardandoLane">
+                  {{ guardandoLane ? 'Guardando...' : 'Crear lane' }}
+                </button>
+              }
+              <button type="button" class="btn btn-secondary" [disabled]="guardandoLane" (click)="cancelarCreacionLane()">
+                Cancelar
+              </button>
+            </form>
+          }
 
           <div class="desplazable">
             <div class="lienzo-pool"

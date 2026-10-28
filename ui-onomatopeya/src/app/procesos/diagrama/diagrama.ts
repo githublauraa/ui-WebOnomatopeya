@@ -1,11 +1,13 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { Arco, Diagrama, FlujoMensaje, Lane, MensajeDetalle, Nodo, Pool, PoolCrearDatos } from '../../models/diagrama.model';
+import { Arco, Diagrama, FlujoMensaje, Lane, LaneCrearDatos, MensajeDetalle, Nodo, Pool, PoolCrearDatos } from '../../models/diagrama.model';
 import { mensajeDeError } from '../../models/error-response.model';
 import { EditarProceso } from '../../models/proceso.model';
+import { RolProceso } from '../../models/rol-proceso.model';
 import { DiagramaService } from '../../services/diagrama.service';
 import { ProcesoService } from '../../services/proceso.service';
+import { RolProcesoService } from '../../services/rol-proceso.service';
 
 @Component({
   selector: 'app-diagrama',
@@ -18,6 +20,7 @@ export class DiagramaComponent implements OnInit {
   private ruta = inject(ActivatedRoute);
   private diagramaService = inject(DiagramaService);
   private procesoService = inject(ProcesoService);
+  private rolProcesoService = inject(RolProcesoService);
   private cambios = inject(ChangeDetectorRef);
   private fb = inject(FormBuilder);
 
@@ -28,9 +31,14 @@ export class DiagramaComponent implements OnInit {
   guardando = false;
   errorEdicion = '';
   errorPool = '';
+  errorLane = '';
   aviso = '';
   creandoPool = false;
   guardandoPool = false;
+  creandoLaneParaPoolId: number | null = null;
+  guardandoLane = false;
+  cargandoRoles = false;
+  roles: RolProceso[] = [];
   formulario = this.fb.nonNullable.group({
     descripcion: ['', Validators.maxLength(10000)]
   });
@@ -44,6 +52,11 @@ export class DiagramaComponent implements OnInit {
     alto: [400, [Validators.required, Validators.min(1)]],
     orden: [1, [Validators.required, Validators.min(0)]]
   });
+  formularioLane = this.fb.nonNullable.group({
+    rolProcesoId: [0, [Validators.required, Validators.min(1)]],
+    orden: [0, [Validators.required, Validators.min(0)]],
+    altura: [200, [Validators.required, Validators.min(1)]]
+  });
 
   ngOnInit(): void {
     const idProceso = Number(this.ruta.snapshot.paramMap.get('id'));
@@ -55,6 +68,7 @@ export class DiagramaComponent implements OnInit {
     }
 
     this.cargarDiagrama(idProceso);
+    this.cargarRoles();
   }
 
   cargarDiagrama(idProceso: number): void {
@@ -104,6 +118,66 @@ export class DiagramaComponent implements OnInit {
   cancelarCreacionPool(): void {
     this.creandoPool = false;
     this.errorPool = '';
+  }
+
+  cargarRoles(): void {
+    this.cargandoRoles = true;
+    this.rolProcesoService.listar().subscribe({
+      next: (respuesta) => {
+        this.roles = respuesta.contenido.filter((rol) => rol.activo);
+        this.cargandoRoles = false;
+        this.cambios.markForCheck();
+      },
+      error: () => {
+        this.roles = [];
+        this.cargandoRoles = false;
+        this.cambios.markForCheck();
+      }
+    });
+  }
+
+  iniciarCreacionLane(pool: Pool): void {
+    const orden = Math.max(-1, ...this.lanesDePool(pool.id).map((lane) => lane.orden)) + 1;
+    this.formularioLane.reset({
+      rolProcesoId: this.roles[0]?.id ?? 0,
+      orden,
+      altura: 200
+    });
+    this.errorLane = '';
+    this.aviso = '';
+    this.creandoLaneParaPoolId = pool.id;
+  }
+
+  cancelarCreacionLane(): void {
+    this.creandoLaneParaPoolId = null;
+    this.errorLane = '';
+  }
+
+  crearLane(): void {
+    if (!this.diagrama || this.creandoLaneParaPoolId === null || this.guardandoLane) return;
+    if (this.formularioLane.invalid) {
+      this.formularioLane.markAllAsTouched();
+      return;
+    }
+
+    const datos: LaneCrearDatos = this.formularioLane.getRawValue();
+    const procesoId = this.diagrama.proceso.id;
+    const poolId = this.creandoLaneParaPoolId;
+    this.guardandoLane = true;
+    this.errorLane = '';
+    this.diagramaService.crearLane(procesoId, poolId, datos).subscribe({
+      next: () => {
+        this.guardandoLane = false;
+        this.creandoLaneParaPoolId = null;
+        this.aviso = 'Lane creada correctamente.';
+        this.cargarDiagrama(procesoId);
+      },
+      error: (error) => {
+        this.errorLane = mensajeDeError(error);
+        this.guardandoLane = false;
+        this.cambios.markForCheck();
+      }
+    });
   }
 
   crearPool(): void {

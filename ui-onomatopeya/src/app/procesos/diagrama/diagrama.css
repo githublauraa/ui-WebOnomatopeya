@@ -186,6 +186,12 @@
     color: #58677b;
 }
 
+.acciones-pool {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .etiqueta-caja-negra {
     padding: 5px 9px;
     color: #fff;
@@ -193,6 +199,31 @@
     border-radius: 999px;
     font-size: 13px;
     white-space: nowrap;
+}
+
+.formulario-lane {
+    padding: 16px 18px;
+    border-bottom: 1px solid #c8d4e5;
+    background: #f6f9fd;
+}
+
+.formulario-lane h4 {
+    margin-top: 0;
+    color: #425b80;
+}
+
+.campos-lane {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.campos-lane label {
+    display: grid;
+    gap: 5px;
+    color: #425b80;
+    font-size: 14px;
 }
 
 .desplazable {
@@ -382,6 +413,10 @@ marker path {
     }
 
     .campos-pool {
+        grid-template-columns: 1fr;
+    }
+
+    .campos-lane {
         grid-template-columns: 1fr;
     }
 
