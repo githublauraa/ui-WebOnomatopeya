@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 import { mensajeDeError } from '../../models/error-response.model';
 import { CrearProceso, EditarProceso, Proceso } from '../../models/proceso.model';
 import { ProcesoService } from '../../services/proceso.service';
@@ -12,6 +13,7 @@ import { ProcesoService } from '../../services/proceso.service';
   templateUrl: './proceso-form.component.html'
 })
 export class ProcesoFormComponent implements OnInit {
+  readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly ruta = inject(ActivatedRoute);
   private readonly procesos = inject(ProcesoService);
@@ -65,6 +67,7 @@ export class ProcesoFormComponent implements OnInit {
   }
 
   guardar(): void {
+    if (!this.auth.puedeEditar(this.proceso ?? undefined)) return;
     if (this.guardando || this.cargando || (this.guardado && !this.editando)) return;
 
     this.error = '';

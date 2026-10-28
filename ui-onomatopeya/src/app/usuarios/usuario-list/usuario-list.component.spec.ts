@@ -1,3 +1,4 @@
+import { AuthService } from '../../services/auth.service';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -24,6 +25,10 @@ describe('UsuarioListComponent', () => {
 
     const vista = TestBed.createComponent(UsuarioListComponent);
     const peticiones = TestBed.inject(HttpTestingController);
+    TestBed.inject(AuthService).usuario.set({
+      id: 1, empresaId: 1, nombre: 'Ana', correo: 'ana@example.com',
+      rolAcceso: 'ADMINISTRADOR', estado: 'ACTIVO', fechaCreacion: '', version: 0
+    });
     vista.detectChanges();
 
     const consulta = peticiones.expectOne('/api/usuarios');
@@ -47,6 +52,10 @@ describe('UsuarioListComponent', () => {
 
     const vista = TestBed.createComponent(UsuarioListComponent);
     const peticiones = TestBed.inject(HttpTestingController);
+    TestBed.inject(AuthService).usuario.set({
+      id: 1, empresaId: 1, nombre: 'Ana', correo: 'ana@example.com',
+      rolAcceso: 'ADMINISTRADOR', estado: 'ACTIVO', fechaCreacion: '', version: 0
+    });
     vista.detectChanges();
     peticiones.expectOne('/api/usuarios').flush([ana]);
     await vista.whenStable();
@@ -98,6 +107,10 @@ describe('UsuarioListComponent', () => {
 
     const vista = TestBed.createComponent(UsuarioListComponent);
     const peticiones = TestBed.inject(HttpTestingController);
+    TestBed.inject(AuthService).usuario.set({
+      id: 1, empresaId: 1, nombre: 'Ana', correo: 'ana@example.com',
+      rolAcceso: 'ADMINISTRADOR', estado: 'ACTIVO', fechaCreacion: '', version: 0
+    });
     vista.detectChanges();
     peticiones.expectOne('/api/usuarios').flush([]);
     await vista.whenStable();

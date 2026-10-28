@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 import { mensajeDeError } from '../../models/error-response.model';
 import {
   DatosDesactivacion,
@@ -19,6 +20,7 @@ import { UsuarioService } from '../../services/usuario.service';
   templateUrl: './usuario-list.component.html'
 })
 export class UsuarioListComponent implements OnInit {
+  readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly usuarioService = inject(UsuarioService);
   private readonly cambios = inject(ChangeDetectorRef);
@@ -63,6 +65,7 @@ export class UsuarioListComponent implements OnInit {
   }
 
   invitar(): void {
+    if (!this.auth.esAdministrador()) return;
     if (this.guardando) return;
     this.error = '';
     this.mensaje = '';
@@ -98,6 +101,7 @@ export class UsuarioListComponent implements OnInit {
   }
 
   desactivar(usuario: Usuario): void {
+    if (!this.auth.esAdministrador()) return;
     if (this.confirmandoId !== usuario.id || this.desactivandoId !== null) return;
 
     const datos: DatosDesactivacion = { version: usuario.version, confirmar: true };

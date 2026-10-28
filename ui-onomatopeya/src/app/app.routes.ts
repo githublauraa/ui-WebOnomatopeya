@@ -13,7 +13,7 @@ export const routes: Routes = [
   { path: 'usuarios', component: UsuarioListComponent, canActivate: [authGuard] },
   { path: 'empresas', component: EmpresaListComponent, canActivate: [authGuard] },
   { path: 'procesos', component: ProcesosListComponent, canActivate: [authGuard] },
-  { path: 'procesos/nuevo', component: ProcesoFormComponent, canActivate: [authGuard] },
-  { path: 'procesos/:id/editar', component: ProcesoFormComponent, canActivate: [authGuard] },
+  { path: 'procesos/nuevo', component: ProcesoFormComponent, canActivate: [authGuard], data: { editar: true } },
+  { path: 'procesos/:id/editar', component: ProcesoFormComponent, canActivate: [authGuard], data: { editar: true } },
   { path: 'procesos/:id/diagrama', component: DiagramaComponent, canActivate: [authGuard] }
 ];

@@ -85,4 +85,26 @@ describe('ProcesoService', () => {
     expect(consulta.request.body).toEqual(datos);
     consulta.flush({ ...proceso, ...datos, version: 4 });
   });
+
+  it('combina filtros con paginación sin perder la consulta de inactivos', () => {
+    servicio.listar(2, { nombre: 'Compra & venta', categoria: 'Área técnica',
+      estado: 'BORRADOR', activo: false }).subscribe();
+    const consulta = peticiones.expectOne(p => p.url === '/api/procesos');
+    expect(consulta.request.params.get('pagina')).toBe('2');
+    expect(consulta.request.params.get('nombre')).toBe('Compra & venta');
+    expect(consulta.request.params.get('categoria')).toBe('Área técnica');
+    expect(consulta.request.params.get('estado')).toBe('BORRADOR');
+    expect(consulta.request.params.get('activo')).toBe('false');
+    consulta.flush({ contenido: [], pagina: 2, tamanio: 10, total: 0, paginas: 0 });
+  });
+
+  it('retira con confirmación y versión y consulta el historial por su ruta', () => {
+    servicio.retirar({ ...proceso, version: 9 }).subscribe();
+    const retirada = peticiones.expectOne('/api/procesos/7');
+    expect(retirada.request.method).toBe('DELETE');
+    expect(retirada.request.body).toEqual({ version: 9, confirmar: true });
+    retirada.flush(null, { status: 204, statusText: 'No Content' });
+    servicio.historial(7).subscribe();
+    peticiones.expectOne('/api/procesos/7/historial').flush([]);
+  });
 });

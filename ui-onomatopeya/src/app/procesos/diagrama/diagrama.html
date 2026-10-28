@@ -1,4 +1,5 @@
 <main class="contenedor-diagrama">
+  <a routerLink="/procesos" queryParamsHandling="preserve">Volver a procesos</a>
 
   @if (cargando) {
     <p class="estado cargando">Cargando diagrama...</p>
@@ -14,7 +15,11 @@
       <h1>{{ diagrama.proceso.nombre }}</h1>
       <p>{{ diagrama.proceso.descripcion }}</p>
 
-      @if (editando) {
+      @if (!puedeEditar) {
+        <p>Solo consulta: puedes ver el diagrama y sus datos.</p>
+      }
+
+      @if (editando && puedeEditar) {
         <form [formGroup]="formulario" (ngSubmit)="guardarDescripcion()" class="mb-3">
           <label for="descripcion" class="form-label">Descripción</label>
           <textarea id="descripcion" class="form-control mb-2" rows="3"
@@ -33,7 +38,7 @@
             Cancelar
           </button>
         </form>
-      } @else {
+      } @else if (puedeEditar) {
         <button type="button" class="btn btn-outline-primary mb-3" (click)="iniciarEdicion()">
           Editar descripción
         </button>
@@ -55,9 +60,11 @@
     <section class="zona-pools">
       <div class="titulo-seccion">
         <h2>Diagrama del proceso</h2>
-        <button type="button" class="btn btn-outline-primary" (click)="iniciarCreacionPool()">
-          Agregar pool
-        </button>
+        @if (puedeEditar) {
+          <button type="button" class="btn btn-outline-primary" (click)="iniciarCreacionPool()">
+            Agregar pool
+          </button>
+        }
       </div>
 
       @if (errorPool && !creandoPool && editandoPoolId === null) {
@@ -73,7 +80,7 @@
         <p class="texto-error mt-3">{{ errorArco }}</p>
       }
 
-      @if (creandoPool || editandoPoolId !== null) {
+      @if (puedeEditar && (creandoPool || editandoPoolId !== null)) {
         <form class="formulario-pool" [formGroup]="formularioPool" (ngSubmit)="guardarPool()">
           <h3>{{ editandoPoolId === null ? 'Nuevo pool' : 'Editar pool' }}</h3>
           <div class="campos-pool">
@@ -121,27 +128,37 @@
               @if (pool.cajaNegra) {
                 <span class="etiqueta-caja-negra">Caja negra</span>
               }
-              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="iniciarEdicionPool(pool)">
-                Editar
-              </button>
-              <button type="button" class="btn btn-sm btn-outline-danger" (click)="retirarPool(pool)">
-                Retirar
-              </button>
+              @if (puedeEditar) {
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="iniciarEdicionPool(pool)">
+                  Editar
+                </button>
+              }
+              @if (puedeEditar && !pool.propietario) {
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="retirarPool(pool)">
+                  Retirar
+                </button>
+              }
               @if (!pool.cajaNegra) {
-                <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionLane(pool)">
-                  Agregar lane
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionNodo(pool)">
-                  Agregar nodo
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionArco(pool)">
-                  Conectar nodos
-                </button>
+                @if (puedeEditar) {
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionLane(pool)">
+                    Agregar lane
+                  </button>
+                }
+                @if (puedeEditar) {
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionNodo(pool)">
+                    Agregar nodo
+                  </button>
+                }
+                @if (puedeEditar) {
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionArco(pool)">
+                    Conectar nodos
+                  </button>
+                }
               }
             </div>
           </header>
 
-          @if (creandoLaneParaPoolId === pool.id) {
+          @if (puedeEditar && creandoLaneParaPoolId === pool.id) {
             <form class="formulario-lane" [formGroup]="formularioLane" (ngSubmit)="guardarLane()">
               <h4>{{ editandoLaneId === null ? 'Nueva lane' : 'Editar lane' }}</h4>
               @if (cargandoRoles) {
@@ -176,7 +193,7 @@
             </form>
           }
 
-          @if (creandoNodoParaPoolId === pool.id) {
+          @if (puedeEditar && creandoNodoParaPoolId === pool.id) {
             <form class="formulario-nodo" [formGroup]="formularioNodo" (ngSubmit)="guardarNodo()">
               <h4>{{ editandoNodoId === null ? 'Nuevo nodo' : 'Editar nodo' }}</h4>
               <div class="campos-nodo">
@@ -195,7 +212,7 @@
 
                 @if (formularioNodo.controls.clase.value === 'ACTIVIDAD') {
                   <label>Lane
-                    <select class="form-select" formControlName="laneId">
+                    <select class="form-select" formControlName="laneId" (change)="cambiarLaneNodo()">
                       <option [ngValue]="0">Selecciona una lane</option>
                       @for (lane of lanesDePool(pool.id); track lane.id) {
                         <option [ngValue]="lane.id">{{ lane.nombre }}</option>
@@ -261,7 +278,7 @@
             </form>
           }
 
-          @if (creandoArcoParaPoolId === pool.id) {
+          @if (puedeEditar && creandoArcoParaPoolId === pool.id) {
             <form class="formulario-arco" [formGroup]="formularioArco" (ngSubmit)="guardarArco()">
               <h4>{{ editandoArcoId === null ? 'Nuevo arco' : 'Editar arco' }}</h4>
               <div class="campos-arco">
@@ -297,7 +314,7 @@
             </form>
           }
 
-          <app-diagrama-lienzo [pool]="pool" [lanes]="lanesDePool(pool.id)" [nodos]="nodosDePool(pool.id)" [arcos]="arcosDePool(pool.id)"
+          <app-diagrama-lienzo [editable]="puedeEditar" [retirable]="puedeRetirar" [pool]="pool" [lanes]="lanesDePool(pool.id)" [nodos]="nodosDePool(pool.id)" [arcos]="arcosDePool(pool.id)"
             (editarLane)="iniciarEdicionLane($event)" (retirarLane)="retirarLane($event)"
             (editarNodo)="iniciarEdicionNodo($event)" (retirarNodo)="retirarNodo($event)"
             (editarArco)="iniciarEdicionArco($event)" (retirarArco)="retirarArco($event)" />

@@ -1,3 +1,4 @@
+import { AuthService } from '../../services/auth.service';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -34,6 +35,10 @@ describe('ProcesoFormComponent', () => {
       ]
     });
     peticiones = TestBed.inject(HttpTestingController);
+    TestBed.inject(AuthService).usuario.set({
+      id: 1, empresaId: 1, nombre: 'Ana', correo: 'ana@example.com',
+      rolAcceso: 'ADMINISTRADOR', estado: 'ACTIVO', fechaCreacion: '', version: 0
+    });
   });
 
   afterEach(() => peticiones.verify());

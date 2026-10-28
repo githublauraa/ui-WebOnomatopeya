@@ -1,11 +1,12 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   Arco, ArcoDatos, Diagrama, DireccionGateway, FlujoMensaje, Lane, LaneCrearDatos, LaneEditarDatos, MensajeDetalle,
   Nodo, NodoDatos, OperacionEventoMensaje, Pool, PoolCrearDatos, PoolEditarDatos,
   TipoActividad, TipoEvento, TipoGateway
 } from '../../models/diagrama.model';
+import { AuthService } from '../../services/auth.service';
 import { mensajeDeError } from '../../models/error-response.model';
 import { EditarProceso } from '../../models/proceso.model';
 import { RolProceso } from '../../models/rol-proceso.model';
@@ -17,11 +18,13 @@ import { DiagramaLienzoComponent } from './diagrama-lienzo/diagrama-lienzo';
 @Component({
   selector: 'app-diagrama',
   standalone: true,
-  imports: [ReactiveFormsModule, DiagramaLienzoComponent],
+  imports: [RouterLink, ReactiveFormsModule, DiagramaLienzoComponent],
   templateUrl: './diagrama.html',
   styleUrl: './diagrama.css'
 })
 export class DiagramaComponent implements OnInit {
+  readonly auth = inject(AuthService);
+  private laneSeleccionada = 0;
   private ruta = inject(ActivatedRoute);
   private diagramaService = inject(DiagramaService);
   private procesoService = inject(ProcesoService);
@@ -94,6 +97,14 @@ export class DiagramaComponent implements OnInit {
     condicionSalida: ['', Validators.maxLength(10000)]
   });
 
+  get puedeEditar(): boolean {
+    return !!this.diagrama && this.auth.puedeEditar(this.diagrama.proceso);
+  }
+
+  get puedeRetirar(): boolean {
+    return !!this.diagrama && this.auth.esAdministrador(this.diagrama.proceso);
+  }
+
   ngOnInit(): void {
     const idProceso = Number(this.ruta.snapshot.paramMap.get('id'));
 
@@ -104,7 +115,7 @@ export class DiagramaComponent implements OnInit {
     }
 
     this.cargarDiagrama(idProceso);
-    this.cargarRoles();
+    if (this.auth.puedeEditar()) this.cargarRoles();
   }
 
   cargarDiagrama(idProceso: number): void {
@@ -128,6 +139,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarEdicion(): void {
+    if (!this.puedeEditar) return;
     if (!this.diagrama) return;
     this.formulario.reset({ descripcion: this.diagrama.proceso.descripcion ?? '' });
     this.errorEdicion = '';
@@ -141,6 +153,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarCreacionPool(): void {
+    if (!this.puedeEditar) return;
     const orden = Math.max(0, ...(this.diagrama?.pools ?? []).map((pool) => pool.orden)) + 1;
     this.formularioPool.reset({
       nombre: '', tipoParticipante: 'EMPRESA', cajaNegra: false,
@@ -159,6 +172,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarEdicionPool(pool: Pool): void {
+    if (!this.puedeEditar) return;
     this.formularioPool.reset({
       nombre: pool.nombre,
       tipoParticipante: pool.tipoParticipante,
@@ -176,11 +190,13 @@ export class DiagramaComponent implements OnInit {
   }
 
   guardarPool(): void {
+    if (!this.puedeEditar) return;
     if (this.editandoPoolId === null) this.crearPool();
     else this.actualizarPool(this.editandoPoolId);
   }
 
   actualizarPool(poolId: number): void {
+    if (!this.puedeEditar) return;
     if (!this.diagrama || this.guardandoPool) return;
     if (this.formularioPool.invalid) {
       this.formularioPool.markAllAsTouched();
@@ -213,6 +229,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   retirarPool(pool: Pool): void {
+    if (!this.puedeEditar) return;
     if (!this.diagrama || this.guardandoPool) return;
     if (!window.confirm(`¿Retirar el pool "${pool.nombre}"? Esta acción no borra su historial.`)) return;
     const procesoId = this.diagrama.proceso.id;
@@ -249,6 +266,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarCreacionLane(pool: Pool): void {
+    if (!this.puedeEditar) return;
     const orden = Math.max(-1, ...this.lanesDePool(pool.id).map((lane) => lane.orden)) + 1;
     this.formularioLane.reset({
       rolProcesoId: this.roles[0]?.id ?? 0,
@@ -268,6 +286,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarEdicionLane(lane: Lane): void {
+    if (!this.puedeEditar) return;
     this.formularioLane.reset({
       rolProcesoId: lane.rolProcesoId ?? 0,
       orden: lane.orden,
@@ -280,11 +299,13 @@ export class DiagramaComponent implements OnInit {
   }
 
   guardarLane(): void {
+    if (!this.puedeEditar) return;
     if (this.editandoLaneId === null) this.crearLane();
     else this.actualizarLane(this.editandoLaneId);
   }
 
   actualizarLane(laneId: number): void {
+    if (!this.puedeEditar) return;
     if (!this.diagrama || this.guardandoLane) return;
     if (this.formularioLane.invalid) {
       this.formularioLane.markAllAsTouched();
@@ -313,6 +334,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   retirarLane(lane: Lane): void {
+    if (!this.puedeEditar) return;
     if (!this.diagrama || this.guardandoLane) return;
     if (!window.confirm(`¿Retirar la lane "${lane.nombre}"? Primero resuelve las actividades que tenga asignadas.`)) return;
     const procesoId = this.diagrama.proceso.id;
@@ -333,6 +355,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   crearLane(): void {
+    if (!this.puedeEditar) return;
     if (!this.diagrama || this.creandoLaneParaPoolId === null || this.guardandoLane) return;
     if (this.formularioLane.invalid) {
       this.formularioLane.markAllAsTouched();
@@ -360,11 +383,14 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarCreacionNodo(pool: Pool): void {
+    if (!this.puedeEditar) return;
     if (pool.cajaNegra) return;
     const lanes = this.lanesDePool(pool.id);
     const desplazamiento = this.nodosDePool(pool.id).length * 25;
     this.formularioNodo.reset({
-      clase: 'ACTIVIDAD', nombre: '', posicionX: 50 + desplazamiento, posicionY: 80,
+      clase: 'ACTIVIDAD', nombre: '',
+      posicionX: Math.max(0, Math.min(50 + desplazamiento, (pool.ancho ?? 0) - 140)),
+      posicionY: Math.max(0, Math.min(80, (lanes[0]?.altura ?? pool.alto ?? 0) - 70)),
       ancho: 140, alto: 70, laneId: lanes[0]?.id ?? 0, tipoActividad: 'TAREA',
       tipoGateway: 'EXCLUSIVO', direccionGateway: 'DIVERGENCIA', tipoEvento: 'INICIO',
       naturalezaEvento: 'NORMAL', operacionMensaje: 'ENVIO'
@@ -373,6 +399,7 @@ export class DiagramaComponent implements OnInit {
     this.aviso = '';
     this.editandoNodoId = null;
     this.creandoNodoParaPoolId = pool.id;
+    this.laneSeleccionada = lanes[0]?.id ?? 0;
   }
 
   cancelarCreacionNodo(): void {
@@ -382,6 +409,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarEdicionNodo(nodo: Nodo): void {
+    if (!this.puedeEditar) return;
     this.formularioNodo.reset({
       clase: nodo.clase,
       nombre: nodo.nombre,
@@ -398,17 +426,20 @@ export class DiagramaComponent implements OnInit {
       operacionMensaje: nodo.operacionMensaje ?? 'ENVIO'
     });
     this.creandoNodoParaPoolId = nodo.poolId;
+    this.laneSeleccionada = nodo.laneId ?? 0;
     this.editandoNodoId = nodo.id;
     this.errorNodo = '';
     this.aviso = '';
   }
 
   guardarNodo(): void {
+    if (!this.puedeEditar) return;
     if (this.editandoNodoId === null) this.crearNodo();
     else this.actualizarNodo(this.editandoNodoId);
   }
 
   crearNodo(): void {
+    if (!this.puedeEditar) return;
     if (!this.diagrama || this.creandoNodoParaPoolId === null || this.guardandoNodo) return;
     if (this.formularioNodo.invalid) {
       this.formularioNodo.markAllAsTouched();
@@ -437,6 +468,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   actualizarNodo(nodoId: number): void {
+    if (!this.puedeEditar) return;
     if (!this.diagrama || this.guardandoNodo) return;
     if (this.formularioNodo.invalid) {
       this.formularioNodo.markAllAsTouched();
@@ -464,6 +496,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   retirarNodo(nodo: Nodo): void {
+    if (!this.puedeRetirar) return;
     if (!this.diagrama || this.guardandoNodo) return;
     if (!window.confirm(`¿Retirar el nodo "${nodo.nombre}" y sus conexiones? Esta acción no borra su historial.`)) return;
     const procesoId = this.diagrama.proceso.id;
@@ -486,9 +519,36 @@ export class DiagramaComponent implements OnInit {
     });
   }
 
+  cambiarLaneNodo(): void {
+    const valores = this.formularioNodo.getRawValue();
+    const anterior = this.diagrama?.lanes.find(lane => lane.id === this.laneSeleccionada);
+    const destino = this.diagrama?.lanes.find(lane => lane.id === Number(valores.laneId));
+    if (destino) {
+      const relativo = valores.posicionY - (anterior ? this.posicionLane(anterior) : 0);
+      const y = this.posicionLane(destino)
+        + Math.max(0, Math.min(relativo, (destino.altura ?? 0) - valores.alto));
+      this.formularioNodo.patchValue({ posicionY: y });
+      this.laneSeleccionada = destino.id;
+    }
+  }
+
   private datosNodo(): NodoDatos | null {
     if (this.creandoNodoParaPoolId === null) return null;
     const valores = this.formularioNodo.getRawValue();
+    const pool = this.diagrama?.pools.find(pool => pool.id === this.creandoNodoParaPoolId);
+    if (!pool || pool.ancho === null || pool.alto === null || valores.posicionX + valores.ancho > pool.ancho
+        || valores.posicionY + valores.alto > pool.alto) {
+      this.errorNodo = 'El nodo debe quedar completamente dentro del pool.';
+      return null;
+    }
+    if (valores.clase === 'ACTIVIDAD') {
+      const lane = this.diagrama?.lanes.find(lane => lane.id === Number(valores.laneId));
+      if (!lane || lane.altura === null || lane.poolId !== pool.id || valores.posicionY < this.posicionLane(lane)
+          || valores.posicionY + valores.alto > this.posicionLane(lane) + lane.altura) {
+        this.errorNodo = 'La actividad debe quedar dentro de su lane.';
+        return null;
+      }
+    }
     const comunes = {
       poolId: this.creandoNodoParaPoolId,
       nombre: valores.nombre,
@@ -518,6 +578,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarCreacionArco(pool: Pool): void {
+    if (!this.puedeEditar) return;
     const nodos = this.nodosDePool(pool.id);
     this.formularioArco.reset({
       origenId: nodos[0]?.id ?? 0,
@@ -538,6 +599,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarEdicionArco(arco: Arco): void {
+    if (!this.puedeEditar) return;
     this.formularioArco.reset({
       origenId: arco.origenId,
       destinoId: arco.destinoId,
@@ -551,11 +613,13 @@ export class DiagramaComponent implements OnInit {
   }
 
   guardarArco(): void {
+    if (!this.puedeEditar) return;
     if (this.editandoArcoId === null) this.crearArco();
     else this.actualizarArco(this.editandoArcoId);
   }
 
   crearArco(): void {
+    if (!this.puedeEditar) return;
     if (!this.diagrama || this.creandoArcoParaPoolId === null || this.guardandoArco) return;
     if (this.formularioArco.invalid) {
       this.formularioArco.markAllAsTouched();
@@ -584,6 +648,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   actualizarArco(arcoId: number): void {
+    if (!this.puedeEditar) return;
     if (!this.diagrama || this.guardandoArco) return;
     if (this.formularioArco.invalid) {
       this.formularioArco.markAllAsTouched();
@@ -611,6 +676,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   retirarArco(arco: Arco): void {
+    if (!this.puedeRetirar) return;
     if (!this.diagrama || this.guardandoArco) return;
     if (!window.confirm('¿Retirar este arco? Esta acción no borra su historial.')) return;
     const procesoId = this.diagrama.proceso.id;
@@ -662,6 +728,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   crearPool(): void {
+    if (!this.puedeEditar) return;
     if (!this.diagrama || this.guardandoPool) return;
     if (this.formularioPool.invalid) {
       this.formularioPool.markAllAsTouched();
@@ -692,6 +759,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   guardarDescripcion(): void {
+    if (!this.puedeEditar) return;
     if (!this.diagrama || this.guardando) return;
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();

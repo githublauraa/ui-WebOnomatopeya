@@ -28,3 +28,20 @@ export interface PaginaProcesos {
   total: number;
   paginas: number;
 }
+
+export interface FiltrosProcesos {
+  nombre: string;
+  categoria: string;
+  estado: '' | 'BORRADOR' | 'PUBLICADO';
+  activo: boolean;
+}
+
+export interface CambioProceso {
+  id: number;
+  actorId: number | null;
+  fecha: string;
+  tipoObjeto: string;
+  objetoId: number;
+  accion: string;
+  descripcion: string;
+}

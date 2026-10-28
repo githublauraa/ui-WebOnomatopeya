@@ -4,6 +4,7 @@
     <a class="btn btn-outline-secondary" routerLink="/procesos">Volver a procesos</a>
   </div>
 
+  @if (auth.esAdministrador()) {
   <section class="card mb-4">
     <div class="card-body">
       <h2 class="h5 card-title">Invitar usuario</h2>
@@ -38,6 +39,7 @@
       </form>
     </div>
   </section>
+  }
 
   @if (error) {
     <div class="alert alert-danger" role="alert">{{ error }}</div>
@@ -82,7 +84,7 @@
               <td>{{ usuario.rolAcceso }}</td>
               <td>{{ usuario.estado }}</td>
               <td>
-                @if (usuario.estado !== 'INACTIVO') {
+                @if (auth.esAdministrador() && usuario.estado !== 'INACTIVO') {
                   @if (confirmandoId === usuario.id) {
                     <button type="button" class="btn btn-sm btn-danger me-2" (click)="desactivar(usuario)">Confirmar</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" (click)="confirmandoId = null">Cancelar</button>

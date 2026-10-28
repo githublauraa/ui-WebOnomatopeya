@@ -1,8 +1,12 @@
 <main class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0">{{ editando ? 'Editar proceso' : 'Crear proceso' }}</h1>
-    <a class="btn btn-outline-secondary" routerLink="/procesos">Volver a procesos</a>
+    <a class="btn btn-outline-secondary" routerLink="/procesos" queryParamsHandling="preserve">Volver a procesos</a>
   </div>
+
+  @if (!cargando && !auth.puedeEditar(proceso ?? undefined)) {
+    <p>Este proceso está disponible únicamente para consulta.</p>
+  }
 
   @if (cargando) {
     <p>Cargando proceso...</p>
@@ -19,7 +23,7 @@
     </div>
   }
 
-  @if (!cargando && (!editando || proceso)) {
+  @if (!cargando && (!editando || proceso) && auth.puedeEditar(proceso ?? undefined)) {
     <form [formGroup]="formulario" (ngSubmit)="guardar()">
       <div class="mb-3">
         <label class="form-label" for="nombreProceso">Nombre</label>

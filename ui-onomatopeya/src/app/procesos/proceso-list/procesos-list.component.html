@@ -2,52 +2,197 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0">Procesos</h1>
     <div class="d-flex gap-2">
-      <a class="btn btn-primary" routerLink="/procesos/nuevo">Crear proceso</a>
+      @if (auth.puedeEditar()) {
+        <a class="btn btn-primary" routerLink="/procesos/nuevo" queryParamsHandling="preserve"
+          >Crear proceso</a
+        >
+      }
       <a class="btn btn-outline-primary" routerLink="/empresas">Mi empresa</a>
       <a class="btn btn-outline-primary" routerLink="/usuarios">Usuarios</a>
-      <button type="button" class="btn btn-outline-secondary" (click)="salir()">Cerrar sesión</button>
+      <button type="button" class="btn btn-outline-secondary" (click)="salir()">
+        Cerrar sesión
+      </button>
     </div>
   </div>
 
+  <form [formGroup]="filtros" (ngSubmit)="buscar()" class="row g-3 mb-4">
+    <div class="col-md-3">
+      <label for="buscarNombre" class="form-label">Nombre</label>
+      <input id="buscarNombre" class="form-control" formControlName="nombre" />
+    </div>
+    <div class="col-md-3">
+      <label for="buscarCategoria" class="form-label">Categoría</label>
+      <input id="buscarCategoria" class="form-control" formControlName="categoria" />
+    </div>
+    <div class="col-md-3">
+      <label for="buscarEstado" class="form-label">Publicación</label>
+      <select id="buscarEstado" class="form-select" formControlName="estado">
+        <option value="">Todos</option>
+        <option value="BORRADOR">Borrador</option>
+        <option value="PUBLICADO">Publicado</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="buscarActivo" class="form-label">Disponibilidad</label>
+      <select id="buscarActivo" class="form-select" formControlName="activo">
+        <option [ngValue]="true">Activos</option>
+        <option [ngValue]="false">Inactivos</option>
+      </select>
+    </div>
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary" [disabled]="retirando">Buscar</button>
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        [disabled]="retirando"
+        (click)="limpiar()"
+      >
+        Limpiar filtros
+      </button>
+    </div>
+  </form>
+
+  @if (mensaje) {
+    <p class="alert alert-success" role="status">{{ mensaje }}</p>
+  }
   @if (cargando) {
     <p>Cargando procesos...</p>
   }
-
   @if (error) {
     <div class="alert alert-danger" role="alert">
       {{ error }}
-      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="cargar(pagina)">Reintentar</button>
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="cargar(pagina)">
+        Reintentar
+      </button>
     </div>
+  }
+
+  @if (confirmando) {
+    <section class="alert alert-warning" aria-label="Confirmar retirada">
+      <p>¿Retirar {{ confirmando.nombre }}? Quedará inactivo y conservará su historial.</p>
+      <button type="button" class="btn btn-danger me-2" [disabled]="retirando" (click)="retirar()">
+        Confirmar retirada
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        [disabled]="retirando"
+        (click)="confirmando = null"
+      >
+        Cancelar
+      </button>
+    </section>
   }
 
   @if (!cargando && !error) {
     @if (procesos.length === 0) {
-      <p>No hay procesos disponibles.</p>
-    } @else {
-      <div class="list-group">
-        @for (proceso of procesos; track proceso.id) {
-          <div class="list-group-item d-flex justify-content-between align-items-center gap-3">
-            <div>
-              <a [routerLink]="['/procesos', proceso.id, 'diagrama']"><strong>{{ proceso.nombre }}</strong></a>
-              <span class="ms-2">{{ proceso.estadoPublicacion }}</span>
-              @if (proceso.categoria) {
-                <small class="text-muted d-block">{{ proceso.categoria }}</small>
-              }
-            </div>
-            <a class="btn btn-outline-primary btn-sm" [routerLink]="['/procesos', proceso.id, 'editar']">Editar</a>
-          </div>
-        }
-      </div>
+      <p>No hay procesos que coincidan con los filtros.</p>
     }
-
+    <div class="list-group">
+      @for (proceso of procesos; track proceso.id) {
+        <div class="list-group-item d-flex justify-content-between align-items-center gap-3">
+          <div>
+            <a [routerLink]="['/procesos', proceso.id, 'diagrama']" queryParamsHandling="preserve"
+              ><strong>{{ proceso.nombre }}</strong></a
+            >
+            <span class="ms-2"
+              >{{ proceso.estadoPublicacion }} · {{ proceso.activo ? 'Activo' : 'Inactivo' }}</span
+            >
+            <small class="text-muted d-block">{{ proceso.categoria }}</small>
+          </div>
+          <div class="d-flex gap-2">
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              (click)="verHistorial(proceso)"
+            >
+              Historial
+            </button>
+            @if (auth.puedeEditar(proceso)) {
+              <a
+                class="btn btn-outline-primary btn-sm"
+                [routerLink]="['/procesos', proceso.id, 'editar']"
+                queryParamsHandling="preserve"
+                >Editar</a
+              >
+            }
+            @if (auth.esAdministrador(proceso)) {
+              <button
+                type="button"
+                class="btn btn-outline-danger btn-sm"
+                [disabled]="retirando"
+                (click)="confirmando = proceso"
+              >
+                Retirar
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
     @if (paginas > 1) {
       <nav class="d-flex align-items-center gap-3 mt-3" aria-label="Páginas de procesos">
-        <button type="button" class="btn btn-outline-primary btn-sm"
-                [disabled]="pagina === 0" (click)="cargar(pagina - 1)">Anterior</button>
+        <button
+          type="button"
+          class="btn btn-outline-primary btn-sm"
+          [disabled]="pagina === 0 || retirando"
+          (click)="buscar(pagina - 1)"
+        >
+          Anterior
+        </button>
         <span>Página {{ pagina + 1 }} de {{ paginas }} · {{ total }} procesos</span>
-        <button type="button" class="btn btn-outline-primary btn-sm"
-                [disabled]="pagina + 1 >= paginas" (click)="cargar(pagina + 1)">Siguiente</button>
+        <button
+          type="button"
+          class="btn btn-outline-primary btn-sm"
+          [disabled]="pagina + 1 >= paginas || retirando"
+          (click)="buscar(pagina + 1)"
+        >
+          Siguiente
+        </button>
       </nav>
     }
+  }
+
+  @if (procesoHistorial) {
+    <section class="card mt-4" aria-label="Historial del proceso">
+      <div class="card-body">
+        <h2 class="h5">Historial de {{ procesoHistorial.nombre }}</h2>
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm mb-3"
+          (click)="cerrarHistorial()"
+        >
+          Cerrar historial
+        </button>
+        @if (cargandoHistorial) {
+          <p>Cargando historial...</p>
+        }
+        @if (errorHistorial) {
+          <p class="text-danger" role="alert">{{ errorHistorial }}</p>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="verHistorial(procesoHistorial)"
+          >
+            Reintentar historial
+          </button>
+        }
+        @if (!cargandoHistorial && !errorHistorial && historial.length === 0) {
+          <p>No hay cambios registrados.</p>
+        }
+        <ul class="list-group">
+          @for (cambio of historial; track cambio.id) {
+            <li class="list-group-item">
+              <strong>{{ cambio.fecha | date: 'medium' }}</strong> · {{ cambio.accion }}
+              <p class="mb-1">{{ cambio.descripcion }}</p>
+              <small
+                >{{ cambio.tipoObjeto }} {{ cambio.objetoId }} · Usuario
+                {{ cambio.actorId ?? 'del sistema' }}</small
+              >
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
   }
 </main>
