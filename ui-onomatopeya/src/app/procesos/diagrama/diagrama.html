@@ -115,6 +115,9 @@
                 <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionNodo(pool)">
                   Agregar nodo
                 </button>
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionArco(pool)">
+                  Conectar nodos
+                </button>
               }
             </div>
           </header>
@@ -234,6 +237,42 @@
                 {{ guardandoNodo ? 'Guardando...' : 'Crear nodo' }}
               </button>
               <button type="button" class="btn btn-secondary" [disabled]="guardandoNodo" (click)="cancelarCreacionNodo()">
+                Cancelar
+              </button>
+            </form>
+          }
+
+          @if (creandoArcoParaPoolId === pool.id) {
+            <form class="formulario-arco" [formGroup]="formularioArco" (ngSubmit)="crearArco()">
+              <h4>Nuevo arco</h4>
+              <div class="campos-arco">
+                <label>Nodo origen
+                  <select class="form-select" formControlName="origenId">
+                    @for (nodo of nodosDePool(pool.id); track nodo.id) {
+                      <option [ngValue]="nodo.id">{{ nodo.nombre }}</option>
+                    }
+                  </select>
+                </label>
+                <label>Nodo destino
+                  <select class="form-select" formControlName="destinoId">
+                    @for (nodo of nodosDePool(pool.id); track nodo.id) {
+                      <option [ngValue]="nodo.id">{{ nodo.nombre }}</option>
+                    }
+                  </select>
+                </label>
+                <label>Etiqueta opcional<input class="form-control" type="text" formControlName="etiqueta"></label>
+                <label>Condición de salida opcional
+                  <input class="form-control" type="text" formControlName="condicionSalida">
+                </label>
+              </div>
+              <p class="ayuda-arco">La condición solo se usa cuando el nodo origen es un gateway exclusivo o inclusivo.</p>
+              @if (errorArco) {
+                <p class="texto-error">{{ errorArco }}</p>
+              }
+              <button type="submit" class="btn btn-primary me-2" [disabled]="guardandoArco || nodosDePool(pool.id).length < 2">
+                {{ guardandoArco ? 'Guardando...' : 'Crear arco' }}
+              </button>
+              <button type="button" class="btn btn-secondary" [disabled]="guardandoArco" (click)="cancelarCreacionArco()">
                 Cancelar
               </button>
             </form>

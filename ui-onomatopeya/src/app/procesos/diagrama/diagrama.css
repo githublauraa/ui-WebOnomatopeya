@@ -251,6 +251,36 @@
     font-size: 14px;
 }
 
+.formulario-arco {
+    padding: 16px 18px;
+    border-bottom: 1px solid #c8d4e5;
+    background: #f8f6fd;
+}
+
+.formulario-arco h4 {
+    margin-top: 0;
+    color: #425b80;
+}
+
+.campos-arco {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.campos-arco label {
+    display: grid;
+    gap: 5px;
+    color: #425b80;
+    font-size: 14px;
+}
+
+.ayuda-arco {
+    color: #58677b;
+    font-size: 13px;
+}
+
 .desplazable {
     overflow-x: auto;
     padding: 18px;
@@ -446,6 +476,10 @@ marker path {
     }
 
     .campos-nodo {
+        grid-template-columns: 1fr;
+    }
+
+    .campos-arco {
         grid-template-columns: 1fr;
     }
 

@@ -43,9 +43,12 @@ export class DiagramaComponent implements OnInit {
   guardandoLane = false;
   creandoNodoParaPoolId: number | null = null;
   guardandoNodo = false;
+  creandoArcoParaPoolId: number | null = null;
+  guardandoArco = false;
   cargandoRoles = false;
   roles: RolProceso[] = [];
   errorNodo = '';
+  errorArco = '';
   formulario = this.fb.nonNullable.group({
     descripcion: ['', Validators.maxLength(10000)]
   });
@@ -78,6 +81,12 @@ export class DiagramaComponent implements OnInit {
     tipoEvento: ['INICIO'],
     naturalezaEvento: ['NORMAL'],
     operacionMensaje: ['ENVIO']
+  });
+  formularioArco = this.fb.nonNullable.group({
+    origenId: [0, [Validators.required, Validators.min(1)]],
+    destinoId: [0, [Validators.required, Validators.min(1)]],
+    etiqueta: ['', Validators.maxLength(150)],
+    condicionSalida: ['', Validators.maxLength(10000)]
   });
 
   ngOnInit(): void {
@@ -270,6 +279,74 @@ export class DiagramaComponent implements OnInit {
       error: (error) => {
         this.errorNodo = mensajeDeError(error);
         this.guardandoNodo = false;
+        this.cambios.markForCheck();
+      }
+    });
+  }
+
+  iniciarCreacionArco(pool: Pool): void {
+    const nodos = this.nodosDePool(pool.id);
+    this.formularioArco.reset({
+      origenId: nodos[0]?.id ?? 0,
+      destinoId: nodos[1]?.id ?? 0,
+      etiqueta: '',
+      condicionSalida: ''
+    });
+    this.errorArco = nodos.length < 2 ? 'Este pool necesita al menos dos nodos para crear un arco.' : '';
+    this.aviso = '';
+    this.creandoArcoParaPoolId = pool.id;
+  }
+
+  cancelarCreacionArco(): void {
+    this.creandoArcoParaPoolId = null;
+    this.errorArco = '';
+  }
+
+  crearArco(): void {
+    if (!this.diagrama || this.creandoArcoParaPoolId === null || this.guardandoArco) return;
+    if (this.formularioArco.invalid) {
+      this.formularioArco.markAllAsTouched();
+      return;
+    }
+
+    const valores = this.formularioArco.getRawValue();
+    const origen = this.nodoPorId(valores.origenId);
+    if (valores.origenId === valores.destinoId) {
+      this.errorArco = 'El origen y el destino deben ser nodos distintos.';
+      return;
+    }
+    const condicion = valores.condicionSalida.trim() || null;
+    if (origen?.clase === 'GATEWAY' && origen.tipoGateway !== 'PARALELO' && !condicion) {
+      this.errorArco = 'La salida de un gateway exclusivo o inclusivo requiere una condición.';
+      return;
+    }
+    if (origen?.clase !== 'GATEWAY' && condicion) {
+      this.errorArco = 'Solo las salidas de gateway pueden tener condición.';
+      return;
+    }
+    if (origen?.clase === 'GATEWAY' && origen.tipoGateway === 'PARALELO' && condicion) {
+      this.errorArco = 'Un gateway paralelo no usa condiciones.';
+      return;
+    }
+
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoArco = true;
+    this.errorArco = '';
+    this.diagramaService.crearArco(procesoId, {
+      origenId: valores.origenId,
+      destinoId: valores.destinoId,
+      etiqueta: valores.etiqueta.trim() || null,
+      condicionSalida: condicion
+    }).subscribe({
+      next: () => {
+        this.guardandoArco = false;
+        this.creandoArcoParaPoolId = null;
+        this.aviso = 'Arco creado correctamente.';
+        this.cargarDiagrama(procesoId);
+      },
+      error: (error) => {
+        this.errorArco = mensajeDeError(error);
+        this.guardandoArco = false;
         this.cambios.markForCheck();
       }
     });
