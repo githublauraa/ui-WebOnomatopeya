@@ -60,9 +60,13 @@
         </button>
       </div>
 
-      @if (creandoPool) {
-        <form class="formulario-pool" [formGroup]="formularioPool" (ngSubmit)="crearPool()">
-          <h3>Nuevo pool</h3>
+      @if (errorPool && !creandoPool && editandoPoolId === null) {
+        <p class="texto-error mt-3">{{ errorPool }}</p>
+      }
+
+      @if (creandoPool || editandoPoolId !== null) {
+        <form class="formulario-pool" [formGroup]="formularioPool" (ngSubmit)="guardarPool()">
+          <h3>{{ editandoPoolId === null ? 'Nuevo pool' : 'Editar pool' }}</h3>
           <div class="campos-pool">
             <label>Nombre
               <input class="form-control" type="text" formControlName="nombre">
@@ -89,7 +93,7 @@
             <p class="texto-error">{{ errorPool }}</p>
           }
           <button type="submit" class="btn btn-primary me-2" [disabled]="guardandoPool">
-            {{ guardandoPool ? 'Guardando...' : 'Crear pool' }}
+            {{ guardandoPool ? 'Guardando...' : (editandoPoolId === null ? 'Crear pool' : 'Guardar cambios') }}
           </button>
           <button type="button" class="btn btn-secondary" [disabled]="guardandoPool" (click)="cancelarCreacionPool()">
             Cancelar
@@ -108,6 +112,12 @@
               @if (pool.cajaNegra) {
                 <span class="etiqueta-caja-negra">Caja negra</span>
               }
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="iniciarEdicionPool(pool)">
+                Editar
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="retirarPool(pool)">
+                Retirar
+              </button>
               @if (!pool.cajaNegra) {
                 <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionLane(pool)">
                   Agregar lane

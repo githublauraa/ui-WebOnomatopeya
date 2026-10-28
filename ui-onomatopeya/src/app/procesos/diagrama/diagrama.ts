@@ -3,7 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import {
   Arco, Diagrama, DireccionGateway, FlujoMensaje, Lane, LaneCrearDatos, MensajeDetalle,
-  Nodo, NodoDatos, OperacionEventoMensaje, Pool, PoolCrearDatos,
+  Nodo, NodoDatos, OperacionEventoMensaje, Pool, PoolCrearDatos, PoolEditarDatos,
   TipoActividad, TipoEvento, TipoGateway
 } from '../../models/diagrama.model';
 import { mensajeDeError } from '../../models/error-response.model';
@@ -38,6 +38,7 @@ export class DiagramaComponent implements OnInit {
   errorLane = '';
   aviso = '';
   creandoPool = false;
+  editandoPoolId: number | null = null;
   guardandoPool = false;
   creandoLaneParaPoolId: number | null = null;
   guardandoLane = false;
@@ -143,12 +144,88 @@ export class DiagramaComponent implements OnInit {
     });
     this.errorPool = '';
     this.aviso = '';
+    this.editandoPoolId = null;
     this.creandoPool = true;
   }
 
   cancelarCreacionPool(): void {
     this.creandoPool = false;
+    this.editandoPoolId = null;
     this.errorPool = '';
+  }
+
+  iniciarEdicionPool(pool: Pool): void {
+    this.formularioPool.reset({
+      nombre: pool.nombre,
+      tipoParticipante: pool.tipoParticipante,
+      cajaNegra: pool.cajaNegra,
+      posicionX: pool.posicionX ?? 0,
+      posicionY: pool.posicionY ?? 0,
+      ancho: pool.ancho ?? 1000,
+      alto: pool.alto ?? 400,
+      orden: pool.orden
+    });
+    this.creandoPool = false;
+    this.editandoPoolId = pool.id;
+    this.errorPool = '';
+    this.aviso = '';
+  }
+
+  guardarPool(): void {
+    if (this.editandoPoolId === null) this.crearPool();
+    else this.actualizarPool(this.editandoPoolId);
+  }
+
+  actualizarPool(poolId: number): void {
+    if (!this.diagrama || this.guardandoPool) return;
+    if (this.formularioPool.invalid) {
+      this.formularioPool.markAllAsTouched();
+      return;
+    }
+    const pool = this.diagrama.pools.find((actual) => actual.id === poolId);
+    if (!pool) return;
+    const valores = this.formularioPool.getRawValue();
+    const datos: PoolEditarDatos = {
+      ...valores,
+      tipoParticipante: valores.tipoParticipante as PoolEditarDatos['tipoParticipante'],
+      version: pool.version
+    };
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoPool = true;
+    this.errorPool = '';
+    this.diagramaService.editarPool(procesoId, poolId, datos).subscribe({
+      next: () => {
+        this.guardandoPool = false;
+        this.editandoPoolId = null;
+        this.aviso = 'Pool actualizado correctamente.';
+        this.cargarDiagrama(procesoId);
+      },
+      error: (error) => {
+        this.errorPool = mensajeDeError(error);
+        this.guardandoPool = false;
+        this.cambios.markForCheck();
+      }
+    });
+  }
+
+  retirarPool(pool: Pool): void {
+    if (!this.diagrama || this.guardandoPool) return;
+    if (!window.confirm(`¿Retirar el pool "${pool.nombre}"? Esta acción no borra su historial.`)) return;
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoPool = true;
+    this.errorPool = '';
+    this.diagramaService.retirarPool(procesoId, pool.id, { version: pool.version, confirmar: true }).subscribe({
+      next: () => {
+        this.guardandoPool = false;
+        this.aviso = 'Pool retirado correctamente.';
+        this.cargarDiagrama(procesoId);
+      },
+      error: (error) => {
+        this.errorPool = mensajeDeError(error);
+        this.guardandoPool = false;
+        this.cambios.markForCheck();
+      }
+    });
   }
 
   cargarRoles(): void {
