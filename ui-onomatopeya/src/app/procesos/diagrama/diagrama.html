@@ -297,84 +297,10 @@
             </form>
           }
 
-          <div class="desplazable">
-            <div class="lienzo-pool"
-                 [style.width.px]="anchoLienzo(pool)"
-                 [style.height.px]="altoLienzo(pool)">
-              @for (lane of lanesDePool(pool.id); track lane.id) {
-                <section class="lane-lienzo"
-                         [style.top.px]="posicionLane(lane)"
-                         [style.height.px]="lane.altura">
-                  <div class="cabecera-lane">
-                    <h4>{{ lane.nombre }}</h4>
-                    <div>
-                      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="iniciarEdicionLane(lane)">Editar</button>
-                      <button type="button" class="btn btn-sm btn-outline-danger ms-1" (click)="retirarLane(lane)">Retirar</button>
-                    </div>
-                  </div>
-                </section>
-              }
-
-              <svg class="arcos-lienzo"
-                   [attr.viewBox]="'0 0 ' + anchoLienzo(pool) + ' ' + altoLienzo(pool)"
-                   [attr.width]="anchoLienzo(pool)"
-                   [attr.height]="altoLienzo(pool)"
-                   aria-label="Conexiones entre elementos">
-                <defs>
-                  <marker [attr.id]="'flecha-' + pool.id" markerWidth="8" markerHeight="8"
-                          refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
-                    <path d="M 0 0 L 8 4 L 0 8 z"></path>
-                  </marker>
-                </defs>
-                @for (arco of arcosDePool(pool.id); track arco.id) {
-                  <line class="arco"
-                        [attr.x1]="centroX(arco.origenId)"
-                        [attr.y1]="centroY(arco.origenId)"
-                        [attr.x2]="centroX(arco.destinoId)"
-                        [attr.y2]="centroY(arco.destinoId)"
-                        [attr.marker-end]="'url(#flecha-' + pool.id + ')'" />
-                  @if (arco.etiqueta) {
-                    <text class="etiqueta-arco"
-                          [attr.x]="puntoMedioX(arco)"
-                          [attr.y]="puntoMedioY(arco) - 8">{{ arco.etiqueta }}</text>
-                  }
-                }
-              </svg>
-
-              @for (nodo of nodosDePool(pool.id); track nodo.id) {
-                <article class="nodo nodo-lienzo"
-                         [class.actividad]="nodo.clase === 'ACTIVIDAD'"
-                         [class.gateway]="nodo.clase === 'GATEWAY'"
-                         [class.evento]="nodo.clase === 'EVENTO'"
-                         [style.left.px]="nodo.posicionX"
-                         [style.top.px]="nodo.posicionY"
-                         [style.width.px]="nodo.ancho"
-                         [style.height.px]="nodo.alto">
-                  <strong>{{ nodo.nombre }}</strong>
-                  <span>{{ nodo.clase }}</span>
-                  <div class="acciones-nodo">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="iniciarEdicionNodo(nodo)">Editar</button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="retirarNodo(nodo)">Retirar</button>
-                  </div>
-                </article>
-              }
-            </div>
-          </div>
-
-          @if (arcosDePool(pool.id).length > 0) {
-            <div class="lista-arcos-pool">
-              <h4>Arcos del pool</h4>
-              @for (arco of arcosDePool(pool.id); track arco.id) {
-                <div class="control-arco">
-                  <span>{{ nombreNodo(arco.origenId) }} → {{ nombreNodo(arco.destinoId) }}</span>
-                  <div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="iniciarEdicionArco(arco)">Editar</button>
-                    <button type="button" class="btn btn-sm btn-outline-danger ms-1" (click)="retirarArco(arco)">Retirar</button>
-                  </div>
-                </div>
-              }
-            </div>
-          }
+          <app-diagrama-lienzo [pool]="pool" [lanes]="lanesDePool(pool.id)" [nodos]="nodosDePool(pool.id)" [arcos]="arcosDePool(pool.id)"
+            (editarLane)="iniciarEdicionLane($event)" (retirarLane)="retirarLane($event)"
+            (editarNodo)="iniciarEdicionNodo($event)" (retirarNodo)="retirarNodo($event)"
+            (editarArco)="iniciarEdicionArco($event)" (retirarArco)="retirarArco($event)" />
         </article>
       }
     </section>

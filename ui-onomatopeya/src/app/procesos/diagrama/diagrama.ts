@@ -12,11 +12,12 @@ import { RolProceso } from '../../models/rol-proceso.model';
 import { DiagramaService } from '../../services/diagrama.service';
 import { ProcesoService } from '../../services/proceso.service';
 import { RolProcesoService } from '../../services/rol-proceso.service';
+import { DiagramaLienzoComponent } from './diagrama-lienzo/diagrama-lienzo';
 
 @Component({
   selector: 'app-diagrama',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, DiagramaLienzoComponent],
   templateUrl: './diagrama.html',
   styleUrl: './diagrama.css'
 })
