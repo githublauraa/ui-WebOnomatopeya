@@ -53,17 +53,31 @@
       @for (arco of arcos; track arco.id) {
         <line
           class="arco"
+          [class.arco-seleccionado]="seleccionadoArcoId === arco.id"
           [attr.x1]="centroX(arco.origenId)"
           [attr.y1]="centroY(arco.origenId)"
           [attr.x2]="centroX(arco.destinoId)"
           [attr.y2]="centroY(arco.destinoId)"
           [attr.marker-end]="'url(#flecha-' + pool.id + ')'"
         />
+        <!-- Hit area transparente: facilita seleccionar una conexion sin modificarla -->
+        <line class="arco-interaccion"
+          [attr.x1]="centroX(arco.origenId)" [attr.y1]="centroY(arco.origenId)"
+          [attr.x2]="centroX(arco.destinoId)" [attr.y2]="centroY(arco.destinoId)"
+          (click)="seleccionarArco(arco, $event)"
+          (dblclick)="editable && editarArco.emit(arco)"
+        />
         @if (arco.etiqueta) {
           <text class="etiqueta-arco" [attr.x]="puntoMedioX(arco)" [attr.y]="puntoMedioY(arco) - 8">
             {{ arco.etiqueta }}
           </text>
         }
+      }
+      @if (conexionPrevia; as conexion) {
+        <line class="arco-preview"
+          [attr.x1]="centroX(conexion.origenId)" [attr.y1]="centroY(conexion.origenId)"
+          [attr.x2]="conexion.x" [attr.y2]="conexion.y"
+        />
       }
     </svg>
     @for (nodo of nodos; track nodo.id) {
@@ -72,22 +86,40 @@
         role="button"
         tabindex="0"
         [attr.aria-label]="nodo.clase + ': ' + nodo.nombre"
+        [attr.data-nodo-id]="nodo.id"
         [attr.aria-pressed]="seleccionadoId === nodo.id"
         [title]="nodo.nombre"
         [class.seleccionado]="seleccionadoId === nodo.id"
-        (click)="seleccionadoId = nodo.id"
-        (keydown.enter)="seleccionadoId = nodo.id"
-        (keydown.space)="$event.preventDefault(); seleccionadoId = nodo.id"
+        [class.en-arrastre]="arrastrandoNodoId === nodo.id"
+        (pointerdown)="iniciarArrastre($event, nodo)"
+        (pointermove)="moverArrastre($event)"
+        (pointerup)="terminarArrastre($event)"
+        (pointercancel)="cancelarArrastre($event)"
+        (click)="seleccionarNodo(nodo)"
+        (dblclick)="abrirEditorNodo(nodo, $event)"
+        (keydown.enter)="seleccionarNodo(nodo)"
+        (keydown.space)="$event.preventDefault(); seleccionarNodo(nodo)"
         [class.gateway]="nodo.clase === 'GATEWAY'"
         [class.evento]="nodo.clase === 'EVENTO'"
-        [style.left.px]="nodo.posicionX"
-        [style.top.px]="nodo.posicionY"
+        [style.left.px]="posicionX(nodo)"
+        [style.top.px]="posicionY(nodo)"
         [style.width.px]="nodo.ancho"
         [style.height.px]="nodo.alto"
       >
         <strong class="nombre-nodo" [style.font-size.px]="tamanoTexto(nodo)">{{
           nodo.nombre
         }}</strong>
+        @if (editable) {
+          <button type="button" class="conector-nodo"
+            [attr.aria-label]="'Crear conexion desde ' + nodo.nombre"
+            title="Arrastra hasta otra figura para conectarla"
+            (pointerdown)="iniciarConexion($event, nodo)"
+            (pointermove)="moverConexion($event)"
+            (pointerup)="terminarConexion($event)"
+            (pointercancel)="cancelarConexion($event)"
+            (click)="$event.stopPropagation()"
+          ></button>
+        }
       </article>
     }
   </div>
@@ -118,8 +150,21 @@
         </button>
       }
     </div>
+  } @else if (seleccionadoArco; as arco) {
+    <div class="datos-nodo">
+      <strong>{{ nombreNodo(arco.origenId) }} → {{ nombreNodo(arco.destinoId) }}</strong>
+      <span>{{ arco.etiqueta || 'Conexion sin etiqueta' }}</span>
+    </div>
+    <div class="acciones-nodo">
+      @if (editable) {
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="editarArco.emit(arco)">Editar conexion</button>
+      }
+      @if (retirable) {
+        <button type="button" class="btn btn-sm btn-outline-danger" (click)="retirarArco.emit(arco)">Retirar conexion</button>
+      }
+    </div>
   } @else if (nodos.length > 0) {
-    <p class="mb-0">Selecciona una figura para consultar sus datos.</p>
+    <p class="mb-0">Selecciona una figura o una flecha para consultar sus datos.</p>
   }
 </section>
 @if (arcos.length > 0) {

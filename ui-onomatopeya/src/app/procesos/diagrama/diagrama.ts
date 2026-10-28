@@ -13,7 +13,7 @@ import { RolProceso } from '../../models/rol-proceso.model';
 import { DiagramaService } from '../../services/diagrama.service';
 import { ProcesoService } from '../../services/proceso.service';
 import { RolProcesoService } from '../../services/rol-proceso.service';
-import { DiagramaLienzoComponent } from './diagrama-lienzo/diagrama-lienzo';
+import { ConexionLienzo, DiagramaLienzoComponent, MovimientoNodo } from './diagrama-lienzo/diagrama-lienzo';
 
 @Component({
   selector: 'app-diagrama',
@@ -382,6 +382,62 @@ export class DiagramaComponent implements OnInit {
     });
   }
 
+
+  /** ONOMA-SIN-RECARGA-V1: evitar destruir el lienzo tras cada arrastre. */
+  private secuenciaMovimiento = 0;
+  movimientoFinalizado: { nodoId: number; secuencia: number } | null = null;
+
+  /** Persiste la posición que el usuario estableció al soltar una figura. */
+  moverNodoEnLienzo(m: MovimientoNodo): void {
+    if (!this.puedeEditar || !this.diagrama || this.guardandoNodo) return;
+    const n = m.nodo;
+    const comunes = {
+      poolId: n.poolId, nombre: n.nombre, posicionX: m.posicionX,
+      posicionY: m.posicionY, ancho: n.ancho ?? 140, alto: n.alto ?? 70
+    };
+    let datos: NodoDatos;
+    if (n.clase === 'ACTIVIDAD') {
+      if (!m.laneId || !n.tipoActividad) { this.errorNodo = 'La actividad necesita una lane y un tipo.'; return; }
+      datos = { ...comunes, clase: 'ACTIVIDAD', laneId: m.laneId, tipoActividad: n.tipoActividad };
+    } else if (n.clase === 'GATEWAY') {
+      if (!n.tipoGateway || !n.direccionGateway) { this.errorNodo = 'El gateway no tiene tipo o dirección.'; return; }
+      datos = { ...comunes, clase: 'GATEWAY', tipoGateway: n.tipoGateway, direccionGateway: n.direccionGateway };
+    } else if (n.naturalezaEvento === 'MENSAJE') {
+      if (!n.tipoEvento || !n.operacionMensaje) { this.errorNodo = 'El evento no tiene tipo u operación.'; return; }
+      datos = { ...comunes, clase: 'EVENTO', tipoEvento: n.tipoEvento,
+        naturalezaEvento: 'MENSAJE', operacionMensaje: n.operacionMensaje };
+    } else {
+      if (!n.tipoEvento) { this.errorNodo = 'El evento no tiene tipo.'; return; }
+      datos = { ...comunes, clase: 'EVENTO', tipoEvento: n.tipoEvento, naturalezaEvento: 'NORMAL' };
+    }
+
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoNodo = true;
+    this.errorNodo = '';
+    this.diagramaService.editarNodo(procesoId, n.id, datos).subscribe({
+      next: (nodoGuardado: Nodo) => {
+        this.guardandoNodo = false;
+        // Actualizar únicamente el nodo; @for conserva los demás elementos y la selección.
+        if (this.diagrama) {
+          this.diagrama = {
+            ...this.diagrama,
+            nodos: this.diagrama.nodos.map(actual => actual.id === n.id ? nodoGuardado : actual)
+          };
+        }
+        this.movimientoFinalizado = { nodoId: n.id, secuencia: ++this.secuenciaMovimiento };
+        this.aviso = 'Posición guardada correctamente.';
+        this.cambios.markForCheck();
+      },
+      error: (error) => {
+        this.guardandoNodo = false;
+        this.errorNodo = mensajeDeError(error);
+        // Ante un fallo de la API, quitar la vista previa sin recargar todo el editor.
+        this.movimientoFinalizado = { nodoId: n.id, secuencia: ++this.secuenciaMovimiento };
+        this.cambios.markForCheck();
+      }
+    });
+  }
+
   iniciarCreacionNodo(pool: Pool): void {
     if (!this.puedeEditar) return;
     if (pool.cajaNegra) return;
@@ -575,6 +631,40 @@ export class DiagramaComponent implements OnInit {
     }
     return { ...comunes, clase: 'EVENTO', tipoEvento: valores.tipoEvento as TipoEvento,
       naturalezaEvento: 'NORMAL' };
+  }
+
+
+  /** Crea la conexion al soltar el puerto sobre otro nodo del mismo pool. */
+  crearConexionEnLienzo(conexion: ConexionLienzo): void {
+    if (!this.puedeEditar || !this.diagrama || this.guardandoArco) return;
+    const origen = this.diagrama.nodos.find(n => n.id === conexion.origenId);
+    const destino = this.diagrama.nodos.find(n => n.id === conexion.destinoId);
+    if (!origen || !destino || origen.id === destino.id || origen.poolId !== destino.poolId) {
+      this.errorArco = 'Conecta dos nodos diferentes dentro del mismo pool.';
+      return;
+    }
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoArco = true;
+    this.errorArco = '';
+    this.diagramaService.crearArco(procesoId, {
+      origenId: origen.id,
+      destinoId: destino.id,
+      etiqueta: '', condicionSalida: ''
+    }).subscribe({
+      next: (arcoGuardado: Arco) => {
+        this.guardandoArco = false;
+        if (this.diagrama) {
+          this.diagrama = { ...this.diagrama, arcos: [...this.diagrama.arcos, arcoGuardado] };
+        }
+        this.aviso = 'Conexión guardada correctamente.';
+        this.cambios.markForCheck();
+      },
+      error: error => {
+        this.guardandoArco = false;
+        this.errorArco = mensajeDeError(error);
+        this.cambios.markForCheck();
+      }
+    });
   }
 
   iniciarCreacionArco(pool: Pool): void {

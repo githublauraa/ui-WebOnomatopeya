@@ -314,9 +314,11 @@
             </form>
           }
 
-          <app-diagrama-lienzo [editable]="puedeEditar" [retirable]="puedeRetirar" [pool]="pool" [lanes]="lanesDePool(pool.id)" [nodos]="nodosDePool(pool.id)" [arcos]="arcosDePool(pool.id)"
+          <app-diagrama-lienzo [editable]="puedeEditar" [bloqueado]="guardandoNodo || guardandoArco" [movimientoFinalizado]="movimientoFinalizado" [retirable]="puedeRetirar" [pool]="pool" [lanes]="lanesDePool(pool.id)" [nodos]="nodosDePool(pool.id)" [arcos]="arcosDePool(pool.id)"
             (editarLane)="iniciarEdicionLane($event)" (retirarLane)="retirarLane($event)"
             (editarNodo)="iniciarEdicionNodo($event)" (retirarNodo)="retirarNodo($event)"
+            (moverNodo)="moverNodoEnLienzo($event)" (errorMovimiento)="errorNodo = $event"
+            (crearConexion)="crearConexionEnLienzo($event)" (errorConexion)="errorArco = $event"
             (editarArco)="iniciarEdicionArco($event)" (retirarArco)="retirarArco($event)" />
         </article>
       }
