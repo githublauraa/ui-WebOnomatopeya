@@ -69,6 +69,9 @@
       @if (errorNodo && creandoNodoParaPoolId === null) {
         <p class="texto-error mt-3">{{ errorNodo }}</p>
       }
+      @if (errorArco && creandoArcoParaPoolId === null) {
+        <p class="texto-error mt-3">{{ errorArco }}</p>
+      }
 
       @if (creandoPool || editandoPoolId !== null) {
         <form class="formulario-pool" [formGroup]="formularioPool" (ngSubmit)="guardarPool()">
@@ -259,8 +262,8 @@
           }
 
           @if (creandoArcoParaPoolId === pool.id) {
-            <form class="formulario-arco" [formGroup]="formularioArco" (ngSubmit)="crearArco()">
-              <h4>Nuevo arco</h4>
+            <form class="formulario-arco" [formGroup]="formularioArco" (ngSubmit)="guardarArco()">
+              <h4>{{ editandoArcoId === null ? 'Nuevo arco' : 'Editar arco' }}</h4>
               <div class="campos-arco">
                 <label>Nodo origen
                   <select class="form-select" formControlName="origenId">
@@ -286,7 +289,7 @@
                 <p class="texto-error">{{ errorArco }}</p>
               }
               <button type="submit" class="btn btn-primary me-2" [disabled]="guardandoArco || nodosDePool(pool.id).length < 2">
-                {{ guardandoArco ? 'Guardando...' : 'Crear arco' }}
+                {{ guardandoArco ? 'Guardando...' : (editandoArcoId === null ? 'Crear arco' : 'Guardar cambios') }}
               </button>
               <button type="button" class="btn btn-secondary" [disabled]="guardandoArco" (click)="cancelarCreacionArco()">
                 Cancelar
@@ -357,6 +360,21 @@
               }
             </div>
           </div>
+
+          @if (arcosDePool(pool.id).length > 0) {
+            <div class="lista-arcos-pool">
+              <h4>Arcos del pool</h4>
+              @for (arco of arcosDePool(pool.id); track arco.id) {
+                <div class="control-arco">
+                  <span>{{ nombreNodo(arco.origenId) }} → {{ nombreNodo(arco.destinoId) }}</span>
+                  <div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="iniciarEdicionArco(arco)">Editar</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-1" (click)="retirarArco(arco)">Retirar</button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
         </article>
       }
     </section>

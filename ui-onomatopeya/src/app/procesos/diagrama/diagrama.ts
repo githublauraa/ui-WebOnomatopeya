@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import {
-  Arco, Diagrama, DireccionGateway, FlujoMensaje, Lane, LaneCrearDatos, LaneEditarDatos, MensajeDetalle,
+  Arco, ArcoDatos, Diagrama, DireccionGateway, FlujoMensaje, Lane, LaneCrearDatos, LaneEditarDatos, MensajeDetalle,
   Nodo, NodoDatos, OperacionEventoMensaje, Pool, PoolCrearDatos, PoolEditarDatos,
   TipoActividad, TipoEvento, TipoGateway
 } from '../../models/diagrama.model';
@@ -47,6 +47,7 @@ export class DiagramaComponent implements OnInit {
   editandoNodoId: number | null = null;
   guardandoNodo = false;
   creandoArcoParaPoolId: number | null = null;
+  editandoArcoId: number | null = null;
   guardandoArco = false;
   cargandoRoles = false;
   roles: RolProceso[] = [];
@@ -525,12 +526,32 @@ export class DiagramaComponent implements OnInit {
     });
     this.errorArco = nodos.length < 2 ? 'Este pool necesita al menos dos nodos para crear un arco.' : '';
     this.aviso = '';
+    this.editandoArcoId = null;
     this.creandoArcoParaPoolId = pool.id;
   }
 
   cancelarCreacionArco(): void {
     this.creandoArcoParaPoolId = null;
+    this.editandoArcoId = null;
     this.errorArco = '';
+  }
+
+  iniciarEdicionArco(arco: Arco): void {
+    this.formularioArco.reset({
+      origenId: arco.origenId,
+      destinoId: arco.destinoId,
+      etiqueta: arco.etiqueta ?? '',
+      condicionSalida: arco.condicionSalida ?? ''
+    });
+    this.creandoArcoParaPoolId = arco.poolId;
+    this.editandoArcoId = arco.id;
+    this.errorArco = '';
+    this.aviso = '';
+  }
+
+  guardarArco(): void {
+    if (this.editandoArcoId === null) this.crearArco();
+    else this.actualizarArco(this.editandoArcoId);
   }
 
   crearArco(): void {
@@ -540,35 +561,13 @@ export class DiagramaComponent implements OnInit {
       return;
     }
 
-    const valores = this.formularioArco.getRawValue();
-    const origen = this.nodoPorId(valores.origenId);
-    if (valores.origenId === valores.destinoId) {
-      this.errorArco = 'El origen y el destino deben ser nodos distintos.';
-      return;
-    }
-    const condicion = valores.condicionSalida.trim() || null;
-    if (origen?.clase === 'GATEWAY' && origen.tipoGateway !== 'PARALELO' && !condicion) {
-      this.errorArco = 'La salida de un gateway exclusivo o inclusivo requiere una condición.';
-      return;
-    }
-    if (origen?.clase !== 'GATEWAY' && condicion) {
-      this.errorArco = 'Solo las salidas de gateway pueden tener condición.';
-      return;
-    }
-    if (origen?.clase === 'GATEWAY' && origen.tipoGateway === 'PARALELO' && condicion) {
-      this.errorArco = 'Un gateway paralelo no usa condiciones.';
-      return;
-    }
+    const datos = this.datosArco();
+    if (!datos) return;
 
     const procesoId = this.diagrama.proceso.id;
     this.guardandoArco = true;
     this.errorArco = '';
-    this.diagramaService.crearArco(procesoId, {
-      origenId: valores.origenId,
-      destinoId: valores.destinoId,
-      etiqueta: valores.etiqueta.trim() || null,
-      condicionSalida: condicion
-    }).subscribe({
+    this.diagramaService.crearArco(procesoId, datos).subscribe({
       next: () => {
         this.guardandoArco = false;
         this.creandoArcoParaPoolId = null;
@@ -581,6 +580,84 @@ export class DiagramaComponent implements OnInit {
         this.cambios.markForCheck();
       }
     });
+  }
+
+  actualizarArco(arcoId: number): void {
+    if (!this.diagrama || this.guardandoArco) return;
+    if (this.formularioArco.invalid) {
+      this.formularioArco.markAllAsTouched();
+      return;
+    }
+    const datos = this.datosArco();
+    if (!datos) return;
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoArco = true;
+    this.errorArco = '';
+    this.diagramaService.editarArco(procesoId, arcoId, datos).subscribe({
+      next: () => {
+        this.guardandoArco = false;
+        this.editandoArcoId = null;
+        this.creandoArcoParaPoolId = null;
+        this.aviso = 'Arco actualizado correctamente.';
+        this.cargarDiagrama(procesoId);
+      },
+      error: (error) => {
+        this.errorArco = mensajeDeError(error);
+        this.guardandoArco = false;
+        this.cambios.markForCheck();
+      }
+    });
+  }
+
+  retirarArco(arco: Arco): void {
+    if (!this.diagrama || this.guardandoArco) return;
+    if (!window.confirm('¿Retirar este arco? Esta acción no borra su historial.')) return;
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoArco = true;
+    this.errorArco = '';
+    this.diagramaService.retirarArco(procesoId, arco.id, {
+      version: this.diagrama.proceso.version,
+      confirmar: true
+    }).subscribe({
+      next: () => {
+        this.guardandoArco = false;
+        this.aviso = 'Arco retirado correctamente.';
+        this.cargarDiagrama(procesoId);
+      },
+      error: (error) => {
+        this.errorArco = mensajeDeError(error);
+        this.guardandoArco = false;
+        this.cambios.markForCheck();
+      }
+    });
+  }
+
+  private datosArco(): ArcoDatos | null {
+    const valores = this.formularioArco.getRawValue();
+    const origen = this.nodoPorId(valores.origenId);
+    if (valores.origenId === valores.destinoId) {
+      this.errorArco = 'El origen y el destino deben ser nodos distintos.';
+      return null;
+    }
+    const condicion = valores.condicionSalida.trim() || null;
+    if (origen?.clase === 'GATEWAY' && origen.tipoGateway !== 'PARALELO' && !condicion) {
+      this.errorArco = 'La salida de un gateway exclusivo o inclusivo requiere una condición.';
+      return null;
+    }
+    if (origen?.clase !== 'GATEWAY' && condicion) {
+      this.errorArco = 'Solo las salidas de gateway pueden tener condición.';
+      return null;
+    }
+    if (origen?.clase === 'GATEWAY' && origen.tipoGateway === 'PARALELO' && condicion) {
+      this.errorArco = 'Un gateway paralelo no usa condiciones.';
+      return null;
+    }
+    return {
+      origenId: valores.origenId,
+      destinoId: valores.destinoId,
+      etiqueta: valores.etiqueta.trim() || null,
+      condicionSalida: condicion
+    };
   }
 
   crearPool(): void {

@@ -281,6 +281,32 @@
     font-size: 13px;
 }
 
+.lista-arcos-pool {
+    padding: 14px 18px;
+    border-top: 1px solid #c8d4e5;
+    background: #fbfcff;
+}
+
+.lista-arcos-pool h4 {
+    margin: 0 0 10px;
+    color: #425b80;
+    font-size: 14px;
+}
+
+.control-arco {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    border-top: 1px solid #e2e9f3;
+    font-size: 14px;
+}
+
+.control-arco:first-of-type {
+    border-top: 0;
+}
+
 .desplazable {
     overflow-x: auto;
     padding: 18px;
