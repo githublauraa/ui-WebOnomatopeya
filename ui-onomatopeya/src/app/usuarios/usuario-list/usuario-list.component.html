@@ -1,7 +1,7 @@
 <main class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0">Usuarios</h1>
-    <a class="btn btn-outline-secondary" routerLink="/procesos">Volver a procesos</a>
+    <div class="d-flex gap-2"><a class="btn btn-outline-primary" routerLink="/usuarios/roles">Roles de acceso</a><a class="btn btn-outline-primary" routerLink="/roles-proceso">Roles de proceso</a><a class="btn btn-outline-secondary" routerLink="/procesos">Volver a procesos</a></div>
   </div>
 
   @if (auth.esAdministrador()) {

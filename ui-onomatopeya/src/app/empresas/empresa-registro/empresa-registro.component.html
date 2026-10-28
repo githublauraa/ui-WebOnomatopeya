@@ -1,0 +1,87 @@
+<main class="container mt-4 mb-5" style="max-width: 780px">
+  <h1 class="h3 mb-2">Registrar empresa</h1>
+  <p class="text-secondary mb-4">Crea el espacio independiente de tu organización y su primer usuario administrador.</p>
+
+  @if (empresaCreada; as empresa) {
+    <section class="alert alert-success" role="status">
+      <h2 class="h5">Registro completado</h2>
+      <p>La empresa <strong>{{ empresa.nombre }}</strong> fue creada correctamente. Ya puedes iniciar sesión con el correo y la contraseña del administrador.</p>
+      <a class="btn btn-primary" routerLink="/login">Ir a iniciar sesión</a>
+    </section>
+  } @else {
+    <form [formGroup]="formulario" (ngSubmit)="registrar()" novalidate>
+      <fieldset class="border rounded p-3 mb-4">
+        <legend class="float-none w-auto px-2 fs-5">Datos de la empresa</legend>
+        <div class="mb-3">
+          <label class="form-label" for="nombreEmpresa">Nombre de la empresa</label>
+          <input id="nombreEmpresa" class="form-control" formControlName="nombreEmpresa" maxlength="150" autocomplete="organization">
+          @if (formulario.controls.nombreEmpresa.touched && formulario.controls.nombreEmpresa.invalid) {
+            <small class="text-danger">Escribe el nombre de la empresa (máximo 150 caracteres).</small>
+          }
+        </div>
+        <div class="row g-3">
+          <div class="col-md-5">
+            <label class="form-label" for="nit">NIT</label>
+            <input id="nit" class="form-control" formControlName="nit" maxlength="30">
+            @if (formulario.controls.nit.touched && formulario.controls.nit.invalid) {
+              <small class="text-danger">Escribe un NIT válido de máximo 30 caracteres.</small>
+            }
+          </div>
+          <div class="col-md-7">
+            <label class="form-label" for="correoContacto">Correo de contacto</label>
+            <input id="correoContacto" type="email" class="form-control" formControlName="correoContacto" maxlength="255" autocomplete="email">
+            @if (formulario.controls.correoContacto.touched && formulario.controls.correoContacto.invalid) {
+              <small class="text-danger">Ingresa un correo de contacto válido.</small>
+            }
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="border rounded p-3 mb-4">
+        <legend class="float-none w-auto px-2 fs-5">Administrador inicial</legend>
+        <div class="mb-3">
+          <label class="form-label" for="nombreAdministrador">Nombre del administrador</label>
+          <input id="nombreAdministrador" class="form-control" formControlName="nombreAdministrador" maxlength="255" autocomplete="name">
+          @if (formulario.controls.nombreAdministrador.touched && formulario.controls.nombreAdministrador.invalid) {
+            <small class="text-danger">Escribe el nombre del administrador.</small>
+          }
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="correoAdministrador">Correo para iniciar sesión</label>
+          <input id="correoAdministrador" type="email" class="form-control" formControlName="correoAdministrador" maxlength="255" autocomplete="username">
+          @if (formulario.controls.correoAdministrador.touched && formulario.controls.correoAdministrador.invalid) {
+            <small class="text-danger">Ingresa un correo válido para el administrador.</small>
+          }
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="contrasena">Contraseña</label>
+            <input id="contrasena" type="password" class="form-control" formControlName="contrasena" autocomplete="new-password" maxlength="128">
+            @if (formulario.controls.contrasena.touched && formulario.controls.contrasena.invalid) {
+              <small class="text-danger">La contraseña debe tener entre 8 y 128 caracteres.</small>
+            }
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="confirmarContrasena">Confirmar contraseña</label>
+            <input id="confirmarContrasena" type="password" class="form-control" formControlName="confirmarContrasena" autocomplete="new-password">
+            @if (formulario.controls.confirmarContrasena.touched && formulario.controls.confirmarContrasena.hasError('required')) {
+              <small class="text-danger">Confirma la contraseña.</small>
+            } @else if (clavesDistintas) {
+              <small class="text-danger">Las contraseñas no coinciden.</small>
+            }
+          </div>
+        </div>
+      </fieldset>
+
+      @if (error) {
+        <p class="alert alert-danger" role="alert">{{ error }}</p>
+      }
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <button type="submit" class="btn btn-primary" [disabled]="guardando">
+          {{ guardando ? 'Registrando...' : 'Registrar empresa' }}
+        </button>
+        <a routerLink="/login">Ya tengo una cuenta</a>
+      </div>
+    </form>
+  }
+</main>

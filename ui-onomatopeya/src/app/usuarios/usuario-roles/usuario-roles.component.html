@@ -1,0 +1,40 @@
+<main class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Roles de acceso</h1>
+    <a class="btn btn-outline-secondary" routerLink="/usuarios">Volver a usuarios</a>
+  </div>
+  <p class="text-muted">Estos son permisos de acceso a la aplicación. Los roles responsables de lanes se administran por separado.</p>
+  @if (error) { <p class="alert alert-danger" role="alert">{{ error }}</p> }
+  @if (mensaje) { <p class="alert alert-success" role="status">{{ mensaje }}</p> }
+  @if (cargando) { <p>Cargando usuarios...</p> }
+  @if (!cargando) {
+    <table class="table table-striped align-middle">
+      <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Rol actual</th><th>Nuevo rol</th><th>Acción</th></tr></thead>
+      <tbody>
+        @for (u of usuarios; track u.id) {
+          <tr>
+            <td>{{ u.nombre }}</td><td>{{ u.correo }}</td><td>{{ u.estado }}</td><td>{{ u.rolAcceso }}</td>
+            <td>
+              <select class="form-select form-select-sm" [value]="cambiosPendientes[u.id] ?? u.rolAcceso"
+                      [disabled]="!auth.esAdministrador() || u.estado !== 'ACTIVO' || guardandoId !== null"
+                      (change)="seleccionar(u,$event)" [attr.aria-label]="'Rol para ' + u.nombre">
+                <option value="LECTURA">Lectura</option><option value="EDITOR">Editor</option><option value="ADMINISTRADOR">Administrador</option>
+              </select>
+            </td>
+            <td>
+              @if (auth.esAdministrador() && u.estado === 'ACTIVO' && (cambiosPendientes[u.id] ?? u.rolAcceso) !== u.rolAcceso) {
+                @if (confirmandoId === u.id) {
+                  <button class="btn btn-sm btn-primary me-1" type="button" (click)="guardar(u)" [disabled]="guardandoId !== null">Confirmar</button>
+                  <button class="btn btn-sm btn-outline-secondary" type="button" (click)="confirmandoId=null">Cancelar</button>
+                } @else {
+                  <button class="btn btn-sm btn-outline-primary" type="button" (click)="confirmandoId=u.id" [disabled]="guardandoId !== null">Guardar rol</button>
+                }
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (usuarios.length === 0) { <p>No hay usuarios en la empresa.</p> }
+  }
+</main>
