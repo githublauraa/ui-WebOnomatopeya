@@ -226,6 +226,31 @@
     font-size: 14px;
 }
 
+.formulario-nodo {
+    padding: 16px 18px;
+    border-bottom: 1px solid #c8d4e5;
+    background: #fffdf6;
+}
+
+.formulario-nodo h4 {
+    margin-top: 0;
+    color: #425b80;
+}
+
+.campos-nodo {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.campos-nodo label {
+    display: grid;
+    gap: 5px;
+    color: #425b80;
+    font-size: 14px;
+}
+
 .desplazable {
     overflow-x: auto;
     padding: 18px;
@@ -417,6 +442,10 @@ marker path {
     }
 
     .campos-lane {
+        grid-template-columns: 1fr;
+    }
+
+    .campos-nodo {
         grid-template-columns: 1fr;
     }
 

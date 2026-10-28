@@ -108,9 +108,14 @@
               @if (pool.cajaNegra) {
                 <span class="etiqueta-caja-negra">Caja negra</span>
               }
-              <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionLane(pool)">
-                Agregar lane
-              </button>
+              @if (!pool.cajaNegra) {
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionLane(pool)">
+                  Agregar lane
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionNodo(pool)">
+                  Agregar nodo
+                </button>
+              }
             </div>
           </header>
 
@@ -144,6 +149,91 @@
                 </button>
               }
               <button type="button" class="btn btn-secondary" [disabled]="guardandoLane" (click)="cancelarCreacionLane()">
+                Cancelar
+              </button>
+            </form>
+          }
+
+          @if (creandoNodoParaPoolId === pool.id) {
+            <form class="formulario-nodo" [formGroup]="formularioNodo" (ngSubmit)="crearNodo()">
+              <h4>Nuevo nodo</h4>
+              <div class="campos-nodo">
+                <label>Clase
+                  <select class="form-select" formControlName="clase">
+                    <option value="ACTIVIDAD">Actividad</option>
+                    <option value="GATEWAY">Gateway</option>
+                    <option value="EVENTO">Evento</option>
+                  </select>
+                </label>
+                <label>Nombre<input class="form-control" type="text" formControlName="nombre"></label>
+                <label>Posición X<input class="form-control" type="number" min="0" formControlName="posicionX"></label>
+                <label>Posición Y<input class="form-control" type="number" min="0" formControlName="posicionY"></label>
+                <label>Ancho<input class="form-control" type="number" min="1" formControlName="ancho"></label>
+                <label>Alto<input class="form-control" type="number" min="1" formControlName="alto"></label>
+
+                @if (formularioNodo.controls.clase.value === 'ACTIVIDAD') {
+                  <label>Lane
+                    <select class="form-select" formControlName="laneId">
+                      <option [ngValue]="0">Selecciona una lane</option>
+                      @for (lane of lanesDePool(pool.id); track lane.id) {
+                        <option [ngValue]="lane.id">{{ lane.nombre }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label>Tipo de actividad
+                    <select class="form-select" formControlName="tipoActividad">
+                      <option value="TAREA">Tarea</option>
+                      <option value="ENVIO">Envío</option>
+                    </select>
+                  </label>
+                } @else if (formularioNodo.controls.clase.value === 'GATEWAY') {
+                  <label>Tipo de gateway
+                    <select class="form-select" formControlName="tipoGateway">
+                      <option value="EXCLUSIVO">Exclusivo</option>
+                      <option value="PARALELO">Paralelo</option>
+                      <option value="INCLUSIVO">Inclusivo</option>
+                    </select>
+                  </label>
+                  <label>Dirección
+                    <select class="form-select" formControlName="direccionGateway">
+                      <option value="DIVERGENCIA">Divergencia</option>
+                      <option value="CONVERGENCIA">Convergencia</option>
+                    </select>
+                  </label>
+                } @else {
+                  <label>Tipo de evento
+                    <select class="form-select" formControlName="tipoEvento">
+                      <option value="INICIO">Inicio</option>
+                      <option value="INTERMEDIO">Intermedio</option>
+                      <option value="FIN">Fin</option>
+                    </select>
+                  </label>
+                  <label>Naturaleza
+                    <select class="form-select" formControlName="naturalezaEvento">
+                      <option value="NORMAL">Normal</option>
+                      <option value="MENSAJE">Mensaje</option>
+                    </select>
+                  </label>
+                  @if (formularioNodo.controls.naturalezaEvento.value === 'MENSAJE') {
+                    <label>Operación de mensaje
+                      <select class="form-select" formControlName="operacionMensaje">
+                        <option value="ENVIO">Envío</option>
+                        <option value="RECEPCION">Recepción</option>
+                      </select>
+                    </label>
+                  }
+                }
+              </div>
+              @if (formularioNodo.invalid && formularioNodo.touched) {
+                <p class="texto-error">Revisa el nombre y las dimensiones del nodo.</p>
+              }
+              @if (errorNodo) {
+                <p class="texto-error">{{ errorNodo }}</p>
+              }
+              <button type="submit" class="btn btn-primary me-2" [disabled]="guardandoNodo">
+                {{ guardandoNodo ? 'Guardando...' : 'Crear nodo' }}
+              </button>
+              <button type="button" class="btn btn-secondary" [disabled]="guardandoNodo" (click)="cancelarCreacionNodo()">
                 Cancelar
               </button>
             </form>

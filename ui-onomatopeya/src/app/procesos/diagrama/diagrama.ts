@@ -1,7 +1,11 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { Arco, Diagrama, FlujoMensaje, Lane, LaneCrearDatos, MensajeDetalle, Nodo, Pool, PoolCrearDatos } from '../../models/diagrama.model';
+import {
+  Arco, Diagrama, DireccionGateway, FlujoMensaje, Lane, LaneCrearDatos, MensajeDetalle,
+  Nodo, NodoDatos, OperacionEventoMensaje, Pool, PoolCrearDatos,
+  TipoActividad, TipoEvento, TipoGateway
+} from '../../models/diagrama.model';
 import { mensajeDeError } from '../../models/error-response.model';
 import { EditarProceso } from '../../models/proceso.model';
 import { RolProceso } from '../../models/rol-proceso.model';
@@ -37,8 +41,11 @@ export class DiagramaComponent implements OnInit {
   guardandoPool = false;
   creandoLaneParaPoolId: number | null = null;
   guardandoLane = false;
+  creandoNodoParaPoolId: number | null = null;
+  guardandoNodo = false;
   cargandoRoles = false;
   roles: RolProceso[] = [];
+  errorNodo = '';
   formulario = this.fb.nonNullable.group({
     descripcion: ['', Validators.maxLength(10000)]
   });
@@ -56,6 +63,21 @@ export class DiagramaComponent implements OnInit {
     rolProcesoId: [0, [Validators.required, Validators.min(1)]],
     orden: [0, [Validators.required, Validators.min(0)]],
     altura: [200, [Validators.required, Validators.min(1)]]
+  });
+  formularioNodo = this.fb.nonNullable.group({
+    clase: ['ACTIVIDAD', Validators.required],
+    nombre: ['', [Validators.required, Validators.maxLength(150)]],
+    posicionX: [50, [Validators.required, Validators.min(0)]],
+    posicionY: [80, [Validators.required, Validators.min(0)]],
+    ancho: [140, [Validators.required, Validators.min(1)]],
+    alto: [70, [Validators.required, Validators.min(1)]],
+    laneId: [0],
+    tipoActividad: ['TAREA'],
+    tipoGateway: ['EXCLUSIVO'],
+    direccionGateway: ['DIVERGENCIA'],
+    tipoEvento: ['INICIO'],
+    naturalezaEvento: ['NORMAL'],
+    operacionMensaje: ['ENVIO']
   });
 
   ngOnInit(): void {
@@ -175,6 +197,79 @@ export class DiagramaComponent implements OnInit {
       error: (error) => {
         this.errorLane = mensajeDeError(error);
         this.guardandoLane = false;
+        this.cambios.markForCheck();
+      }
+    });
+  }
+
+  iniciarCreacionNodo(pool: Pool): void {
+    if (pool.cajaNegra) return;
+    const lanes = this.lanesDePool(pool.id);
+    const desplazamiento = this.nodosDePool(pool.id).length * 25;
+    this.formularioNodo.reset({
+      clase: 'ACTIVIDAD', nombre: '', posicionX: 50 + desplazamiento, posicionY: 80,
+      ancho: 140, alto: 70, laneId: lanes[0]?.id ?? 0, tipoActividad: 'TAREA',
+      tipoGateway: 'EXCLUSIVO', direccionGateway: 'DIVERGENCIA', tipoEvento: 'INICIO',
+      naturalezaEvento: 'NORMAL', operacionMensaje: 'ENVIO'
+    });
+    this.errorNodo = '';
+    this.aviso = '';
+    this.creandoNodoParaPoolId = pool.id;
+  }
+
+  cancelarCreacionNodo(): void {
+    this.creandoNodoParaPoolId = null;
+    this.errorNodo = '';
+  }
+
+  crearNodo(): void {
+    if (!this.diagrama || this.creandoNodoParaPoolId === null || this.guardandoNodo) return;
+    if (this.formularioNodo.invalid) {
+      this.formularioNodo.markAllAsTouched();
+      return;
+    }
+
+    const valores = this.formularioNodo.getRawValue();
+    const comunes = {
+      poolId: this.creandoNodoParaPoolId,
+      nombre: valores.nombre,
+      posicionX: valores.posicionX,
+      posicionY: valores.posicionY,
+      ancho: valores.ancho,
+      alto: valores.alto
+    };
+    let datos: NodoDatos;
+    if (valores.clase === 'ACTIVIDAD') {
+      if (valores.laneId < 1) {
+        this.errorNodo = 'Una actividad debe pertenecer a una lane activa.';
+        return;
+      }
+      datos = { ...comunes, clase: 'ACTIVIDAD', laneId: valores.laneId,
+        tipoActividad: valores.tipoActividad as TipoActividad };
+    } else if (valores.clase === 'GATEWAY') {
+      datos = { ...comunes, clase: 'GATEWAY', tipoGateway: valores.tipoGateway as TipoGateway,
+        direccionGateway: valores.direccionGateway as DireccionGateway };
+    } else if (valores.naturalezaEvento === 'MENSAJE') {
+      datos = { ...comunes, clase: 'EVENTO', tipoEvento: valores.tipoEvento as TipoEvento,
+        naturalezaEvento: 'MENSAJE', operacionMensaje: valores.operacionMensaje as OperacionEventoMensaje };
+    } else {
+      datos = { ...comunes, clase: 'EVENTO', tipoEvento: valores.tipoEvento as TipoEvento,
+        naturalezaEvento: 'NORMAL' };
+    }
+
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoNodo = true;
+    this.errorNodo = '';
+    this.diagramaService.crearNodo(procesoId, datos).subscribe({
+      next: () => {
+        this.guardandoNodo = false;
+        this.creandoNodoParaPoolId = null;
+        this.aviso = 'Nodo creado correctamente.';
+        this.cargarDiagrama(procesoId);
+      },
+      error: (error) => {
+        this.errorNodo = mensajeDeError(error);
+        this.guardandoNodo = false;
         this.cambios.markForCheck();
       }
     });
