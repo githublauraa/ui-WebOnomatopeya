@@ -63,6 +63,9 @@
       @if (errorPool && !creandoPool && editandoPoolId === null) {
         <p class="texto-error mt-3">{{ errorPool }}</p>
       }
+      @if (errorLane && creandoLaneParaPoolId === null) {
+        <p class="texto-error mt-3">{{ errorLane }}</p>
+      }
 
       @if (creandoPool || editandoPoolId !== null) {
         <form class="formulario-pool" [formGroup]="formularioPool" (ngSubmit)="guardarPool()">
@@ -133,8 +136,8 @@
           </header>
 
           @if (creandoLaneParaPoolId === pool.id) {
-            <form class="formulario-lane" [formGroup]="formularioLane" (ngSubmit)="crearLane()">
-              <h4>Nueva lane</h4>
+            <form class="formulario-lane" [formGroup]="formularioLane" (ngSubmit)="guardarLane()">
+              <h4>{{ editandoLaneId === null ? 'Nueva lane' : 'Editar lane' }}</h4>
               @if (cargandoRoles) {
                 <p>Cargando roles de proceso...</p>
               } @else if (roles.length === 0) {
@@ -158,7 +161,7 @@
                   <p class="texto-error">{{ errorLane }}</p>
                 }
                 <button type="submit" class="btn btn-primary me-2" [disabled]="guardandoLane">
-                  {{ guardandoLane ? 'Guardando...' : 'Crear lane' }}
+                  {{ guardandoLane ? 'Guardando...' : (editandoLaneId === null ? 'Crear lane' : 'Guardar cambios') }}
                 </button>
               }
               <button type="button" class="btn btn-secondary" [disabled]="guardandoLane" (click)="cancelarCreacionLane()">
@@ -296,7 +299,13 @@
                 <section class="lane-lienzo"
                          [style.top.px]="posicionLane(lane)"
                          [style.height.px]="lane.altura">
-                  <h4>{{ lane.nombre }}</h4>
+                  <div class="cabecera-lane">
+                    <h4>{{ lane.nombre }}</h4>
+                    <div>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="iniciarEdicionLane(lane)">Editar</button>
+                      <button type="button" class="btn btn-sm btn-outline-danger ms-1" (click)="retirarLane(lane)">Retirar</button>
+                    </div>
+                  </div>
                 </section>
               }
 

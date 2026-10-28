@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import {
-  Arco, Diagrama, DireccionGateway, FlujoMensaje, Lane, LaneCrearDatos, MensajeDetalle,
+  Arco, Diagrama, DireccionGateway, FlujoMensaje, Lane, LaneCrearDatos, LaneEditarDatos, MensajeDetalle,
   Nodo, NodoDatos, OperacionEventoMensaje, Pool, PoolCrearDatos, PoolEditarDatos,
   TipoActividad, TipoEvento, TipoGateway
 } from '../../models/diagrama.model';
@@ -41,6 +41,7 @@ export class DiagramaComponent implements OnInit {
   editandoPoolId: number | null = null;
   guardandoPool = false;
   creandoLaneParaPoolId: number | null = null;
+  editandoLaneId: number | null = null;
   guardandoLane = false;
   creandoNodoParaPoolId: number | null = null;
   guardandoNodo = false;
@@ -253,12 +254,79 @@ export class DiagramaComponent implements OnInit {
     });
     this.errorLane = '';
     this.aviso = '';
+    this.editandoLaneId = null;
     this.creandoLaneParaPoolId = pool.id;
   }
 
   cancelarCreacionLane(): void {
     this.creandoLaneParaPoolId = null;
+    this.editandoLaneId = null;
     this.errorLane = '';
+  }
+
+  iniciarEdicionLane(lane: Lane): void {
+    this.formularioLane.reset({
+      rolProcesoId: lane.rolProcesoId ?? 0,
+      orden: lane.orden,
+      altura: lane.altura ?? 200
+    });
+    this.editandoLaneId = lane.id;
+    this.creandoLaneParaPoolId = lane.poolId;
+    this.errorLane = '';
+    this.aviso = '';
+  }
+
+  guardarLane(): void {
+    if (this.editandoLaneId === null) this.crearLane();
+    else this.actualizarLane(this.editandoLaneId);
+  }
+
+  actualizarLane(laneId: number): void {
+    if (!this.diagrama || this.guardandoLane) return;
+    if (this.formularioLane.invalid) {
+      this.formularioLane.markAllAsTouched();
+      return;
+    }
+    const lane = this.diagrama.lanes.find((actual) => actual.id === laneId);
+    if (!lane) return;
+    const datos: LaneEditarDatos = { ...this.formularioLane.getRawValue(), version: lane.version };
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoLane = true;
+    this.errorLane = '';
+    this.diagramaService.editarLane(procesoId, lane.poolId, laneId, datos).subscribe({
+      next: () => {
+        this.guardandoLane = false;
+        this.editandoLaneId = null;
+        this.creandoLaneParaPoolId = null;
+        this.aviso = 'Lane actualizada correctamente.';
+        this.cargarDiagrama(procesoId);
+      },
+      error: (error) => {
+        this.errorLane = mensajeDeError(error);
+        this.guardandoLane = false;
+        this.cambios.markForCheck();
+      }
+    });
+  }
+
+  retirarLane(lane: Lane): void {
+    if (!this.diagrama || this.guardandoLane) return;
+    if (!window.confirm(`¿Retirar la lane "${lane.nombre}"? Primero resuelve las actividades que tenga asignadas.`)) return;
+    const procesoId = this.diagrama.proceso.id;
+    this.guardandoLane = true;
+    this.errorLane = '';
+    this.diagramaService.retirarLane(procesoId, lane.poolId, lane.id, { version: lane.version, confirmar: true }).subscribe({
+      next: () => {
+        this.guardandoLane = false;
+        this.aviso = 'Lane retirada correctamente.';
+        this.cargarDiagrama(procesoId);
+      },
+      error: (error) => {
+        this.errorLane = mensajeDeError(error);
+        this.guardandoLane = false;
+        this.cambios.markForCheck();
+      }
+    });
   }
 
   crearLane(): void {

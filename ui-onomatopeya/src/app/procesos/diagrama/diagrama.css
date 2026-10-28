@@ -311,6 +311,13 @@
     font-size: 14px;
 }
 
+.cabecera-lane {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
 .arcos-lienzo {
     position: absolute;
     inset: 0;
