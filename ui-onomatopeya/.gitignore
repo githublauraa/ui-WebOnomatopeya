@@ -34,6 +34,7 @@ yarn-error.log
 .sass-cache/
 /connect.lock
 /coverage
+/.scannerwork
 /libpeerconnection.log
 testem.log
 /typings
@@ -42,3 +43,8 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
