@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
+  DatosAceptarInvitacion,
+  DatosCambioRol,
   DatosDesactivacion,
   DatosInvitacion,
   InvitacionUsuario,
@@ -27,5 +29,13 @@ export class UsuarioService {
 
   desactivar(id: number, datos: DatosDesactivacion): Observable<Usuario> {
     return this.http.post<Usuario>(`${this.apiUrl}/${id}/desactivar`, datos);
+  }
+
+  aceptarInvitacion(datos: DatosAceptarInvitacion): Observable<Usuario> {
+    return this.http.post<Usuario>(`${this.apiUrl}/invitaciones/aceptar`, datos);
+  }
+
+  cambiarRol(id: number, datos: DatosCambioRol): Observable<Usuario> {
+    return this.http.patch<Usuario>(`${this.apiUrl}/${id}/rol`, datos);
   }
 }

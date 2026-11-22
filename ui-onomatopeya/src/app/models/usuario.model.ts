@@ -21,3 +21,6 @@ export interface InvitacionUsuario {
 }
 
 export type DatosDesactivacion = Pick<Usuario, 'version'> & { confirmar: true };
+
+export interface DatosCambioRol { rolAcceso: RolAcceso; version: number; }
+export interface DatosAceptarInvitacion { token: string; contrasena: string; }

@@ -10,7 +10,10 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const router = inject(Router);
   const esApi = request.url.startsWith(`${environment.apiUrl}/`);
   const esLogin = request.url === `${environment.apiUrl}/auth/login`;
-  const token = esApi && !esLogin ? auth.token() : null;
+  const esRegistroPublico = request.method === 'POST' && request.url === `${environment.apiUrl}/empresas`;
+  const esAceptarInvitacion = request.method === 'POST' && request.url === `${environment.apiUrl}/usuarios/invitaciones/aceptar`;
+  const esPublica = esLogin || esRegistroPublico || esAceptarInvitacion;
+  const token = esApi && !esPublica ? auth.token() : null;
 
   const peticion = token
     ? request.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
@@ -18,7 +21,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
   return next(peticion).pipe(
     catchError(error => {
-      if (error instanceof HttpErrorResponse && error.status === 401 && esApi && !esLogin) {
+      if (error instanceof HttpErrorResponse && error.status === 401 && esApi && !esPublica) {
         auth.cerrar();
         void router.navigateByUrl('/login');
       }

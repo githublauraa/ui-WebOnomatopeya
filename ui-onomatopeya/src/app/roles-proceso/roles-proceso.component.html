@@ -1,0 +1,57 @@
+<main class="container my-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Roles de proceso</h1>
+    <a routerLink="/procesos" class="btn btn-outline-secondary">Volver a procesos</a>
+  </div>
+  <p class="text-muted">Define los responsables funcionales que puedes asignar a las lanes del diagrama BPMN.</p>
+  @if (error) { <p role="alert" class="alert alert-danger">{{error}}</p> }
+  @if (mensaje) { <p role="status" class="alert alert-success">{{mensaje}}</p> }
+  @if (auth.esAdministrador()) {
+    <section class="card mb-4"><div class="card-body">
+      <h2 class="h5">{{editando ? 'Editar rol' : 'Crear rol'}}</h2>
+      <form [formGroup]="formulario" (ngSubmit)="guardar()">
+        <div class="mb-3"><label class="form-label" for="nombreRolProceso">Nombre</label>
+          <input id="nombreRolProceso" class="form-control" formControlName="nombre" maxlength="150">
+          @if (formulario.controls.nombre.touched && formulario.controls.nombre.invalid) { <small class="text-danger">Nombre obligatorio (máximo 150 caracteres).</small> }
+        </div>
+        <div class="mb-3"><label class="form-label" for="descripcionRolProceso">Descripción</label>
+          <textarea id="descripcionRolProceso" class="form-control" formControlName="descripcion" rows="2"></textarea>
+        </div>
+        <button class="btn btn-primary me-2" type="submit" [disabled]="guardando">{{guardando ? 'Guardando...' : (editando ? 'Guardar cambios' : 'Crear rol')}}</button>
+        @if (editando) { <button class="btn btn-outline-secondary" type="button" (click)="nuevo()">Cancelar edición</button> }
+      </form>
+    </div></section>
+  }
+  @if (retirando) {
+    <div class="alert alert-warning">
+      ¿Confirmas retirar el rol <strong>{{retirando.nombre}}</strong>? Solo se permitirá si no está en uso.
+      <button type="button" class="btn btn-danger btn-sm mx-2" (click)="retirar()" [disabled]="guardando">Confirmar</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="retirando=null">Cancelar</button>
+    </div>
+  }
+  @if (cargando) { <p>Cargando roles...</p> }
+  @if (!cargando) {
+    <table class="table table-striped align-middle"><thead><tr><th>Nombre</th><th>Descripción</th><th>Procesos en uso</th><th>Acciones</th></tr></thead>
+      <tbody>
+      @for (rol of roles; track rol.id) {
+        <tr><td>{{rol.nombre}}</td><td>{{rol.descripcion || '—'}}</td><td>{{rol.procesosEnUso.length}}</td>
+          <td>
+          @if (auth.esAdministrador()) {
+            <button type="button" class="btn btn-sm btn-outline-primary me-2" [disabled]="guardando" (click)="editar(rol)">Editar</button>
+            <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="guardando || rol.procesosEnUso.length > 0" (click)="confirmarRetiro(rol)">Retirar</button>
+          }
+          </td>
+        </tr>
+      }
+      </tbody>
+    </table>
+    @if (roles.length === 0) { <p>No se encontraron roles de proceso en esta página.</p> }
+    @if (paginas > 1) {
+      <nav aria-label="Paginación de roles de proceso" class="d-flex gap-3 align-items-center">
+        <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="cargando || pagina === 0" (click)="cargar(pagina-1)">Anterior</button>
+        <span>Página {{pagina+1}} de {{paginas}} · {{total}} roles</span>
+        <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="cargando || pagina+1 >= paginas" (click)="cargar(pagina+1)">Siguiente</button>
+      </nav>
+    }
+  }
+</main>

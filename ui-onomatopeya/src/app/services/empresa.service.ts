@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Empresa } from '../models/empresa.model';
+import { Empresa, RegistroEmpresa } from '../models/empresa.model';
 
 @Injectable({ providedIn: 'root' })
 export class EmpresaService {
@@ -12,5 +12,9 @@ export class EmpresaService {
 
   listar(): Observable<Empresa[]> {
     return this.http.get<Empresa[]>(this.url);
+  }
+
+  registrar(datos: RegistroEmpresa): Observable<Empresa> {
+    return this.http.post<Empresa>(this.url, datos);
   }
 }
