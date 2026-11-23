@@ -45,3 +45,17 @@ export interface CambioProceso {
   accion: string;
   descripcion: string;
 }
+
+export interface CompartirProceso {
+  empresaId: number;
+  permitido: boolean;
+  version: number;
+}
+
+export interface AccesoProceso {
+  id: number;
+  procesoId: number;
+  empresaId: number;
+  activo: boolean;
+  version: number;
+}

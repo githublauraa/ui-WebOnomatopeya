@@ -117,6 +117,11 @@
               >
             }
             @if (auth.esAdministrador(proceso)) {
+              <a
+                class="btn btn-outline-primary btn-sm"
+                [routerLink]="['/procesos', proceso.id, 'configuracion']"
+                >Configurar</a
+              >
               <button
                 type="button"
                 class="btn btn-outline-danger btn-sm"

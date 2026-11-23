@@ -107,4 +107,15 @@ describe('ProcesoService', () => {
     servicio.historial(7).subscribe();
     peticiones.expectOne('/api/procesos/7/historial').flush([]);
   });
+
+  it('comparte un proceso con otra empresa para consulta', () => {
+    const datos = { empresaId: 4, permitido: true, version: 2 };
+
+    servicio.compartir(7, datos).subscribe(acceso => expect(acceso.activo).toBe(true));
+
+    const consulta = peticiones.expectOne('/api/procesos/7/comparticion');
+    expect(consulta.request.method).toBe('PUT');
+    expect(consulta.request.body).toEqual(datos);
+    consulta.flush({ id: 9, procesoId: 7, empresaId: 4, activo: true, version: 3 });
+  });
 });

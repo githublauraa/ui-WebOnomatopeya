@@ -1,0 +1,81 @@
+<main class="container mt-4">
+  <a routerLink="/procesos">Volver a procesos</a>
+  <h1 class="h3 mt-3">Compartición y permisos</h1>
+
+  @if (cargando) { <p>Cargando configuración...</p> }
+  @if (error) { <p class="alert alert-danger" role="alert">{{ error }}</p> }
+  @if (mensaje) { <p class="alert alert-success" role="status">{{ mensaje }}</p> }
+
+  @if (proceso) {
+    <p>Proceso: <strong>{{ proceso.nombre }}</strong></p>
+
+    <section class="card mb-4">
+      <div class="card-body">
+        <h2 class="h5">Acceso de otra empresa</h2>
+        <p>La empresa invitada solo podrá consultar el proceso.</p>
+        <form [formGroup]="comparticion" (ngSubmit)="guardarComparticion()" class="row g-3">
+          <div class="col-md-6">
+            <label for="empresaInvitada" class="form-label">Identificador de la empresa</label>
+            <input id="empresaInvitada" type="number" min="1" class="form-control"
+              formControlName="empresaId" />
+          </div>
+          <div class="col-md-6 d-flex align-items-end">
+            <label class="form-check">
+              <input type="checkbox" class="form-check-input" formControlName="permitido" />
+              <span class="form-check-label">Permitir consulta</span>
+            </label>
+          </div>
+          <div><button class="btn btn-primary" [disabled]="guardando">Guardar acceso</button></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-body">
+        <h2 class="h5">Permisos sobre pools y lanes</h2>
+        <form [formGroup]="permiso" (ngSubmit)="guardarPermiso()" class="row g-3">
+          <div class="col-md-3">
+            <label for="rolPermiso" class="form-label">Rol</label>
+            <select id="rolPermiso" class="form-select" formControlName="rolAcceso">
+              <option value="ADMINISTRADOR">Administrador</option>
+              <option value="EDITOR">Editor</option>
+              <option value="LECTURA">Lectura</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="recursoPermiso" class="form-label">Recurso</label>
+            <select id="recursoPermiso" class="form-select" formControlName="recurso">
+              <option value="POOL">Pool</option><option value="LANE">Lane</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="accionPermiso" class="form-label">Acción</label>
+            <select id="accionPermiso" class="form-select" formControlName="accion">
+              <option value="CREAR">Crear</option><option value="EDITAR">Editar</option>
+              <option value="RETIRAR">Retirar</option>
+            </select>
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <label class="form-check">
+              <input type="checkbox" class="form-check-input" formControlName="permitido" />
+              <span class="form-check-label">Permitido</span>
+            </label>
+          </div>
+          <div><button class="btn btn-primary" [disabled]="guardando">Guardar permiso</button></div>
+        </form>
+
+        @if (permisos.length > 0) {
+          <table class="table mt-4">
+            <thead><tr><th>Rol</th><th>Recurso</th><th>Acción</th><th>Resultado</th></tr></thead>
+            <tbody>
+              @for (item of permisos; track item.id) {
+                <tr><td>{{ item.rolAcceso }}</td><td>{{ item.recurso }}</td>
+                  <td>{{ item.accion }}</td><td>{{ item.permitido ? 'Permitido' : 'Bloqueado' }}</td></tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </section>
+  }
+</main>

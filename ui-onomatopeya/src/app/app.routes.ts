@@ -10,6 +10,7 @@ import { RolesProcesoComponent } from './roles-proceso/roles-proceso.component';
 import { RegistroEmpresaComponent } from './empresas/empresa-registro/empresa-registro.component';
 import { authGuard, roleGuard } from './services/auth.guard';
 import { EmpresaListComponent } from './empresas/empresa-list/empresa-list.component';
+import { ConfiguracionProcesoComponent } from './procesos/configuracion-proceso/configuracion-proceso.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'procesos', pathMatch: 'full' },
@@ -38,5 +39,11 @@ export const routes: Routes = [
   { path: 'procesos', component: ProcesosListComponent, canActivate: [authGuard] },
   { path: 'procesos/nuevo', component: ProcesoFormComponent, canActivate: [authGuard], data: { editar: true } },
   { path: 'procesos/:id/editar', component: ProcesoFormComponent, canActivate: [authGuard], data: { editar: true } },
+  {
+    path: 'procesos/:id/configuracion',
+    component: ConfiguracionProcesoComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRADOR'] }
+  },
   { path: 'procesos/:id/diagrama', component: DiagramaComponent, canActivate: [authGuard] }
 ];

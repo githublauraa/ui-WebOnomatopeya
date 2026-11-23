@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { CambioProceso, FiltrosProcesos, CrearProceso, EditarProceso, PaginaProcesos, Proceso } from '../models/proceso.model';
+import { AccesoProceso, CambioProceso, CompartirProceso, FiltrosProcesos, CrearProceso, EditarProceso, PaginaProcesos, Proceso } from '../models/proceso.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProcesoService {
@@ -41,5 +41,9 @@ export class ProcesoService {
 
   actualizar(id: number, datos: EditarProceso): Observable<Proceso> {
     return this.http.put<Proceso>(`${this.url}/${id}`, datos);
+  }
+
+  compartir(id: number, datos: CompartirProceso): Observable<AccesoProceso> {
+    return this.http.put<AccesoProceso>(`${this.url}/${id}/comparticion`, datos);
   }
 }
