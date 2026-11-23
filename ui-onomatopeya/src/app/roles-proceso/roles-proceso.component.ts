@@ -28,6 +28,8 @@ export class RolesProcesoComponent implements OnInit {
   mensaje = '';
   editando: RolProceso | null = null;
   retirando: RolProceso | null = null;
+  readonly nombreBusqueda = this.fb.nonNullable.control('');
+  private filtroNombre = '';
   readonly formulario = this.fb.nonNullable.group({
     nombre: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(150)]],
     descripcion: ['', [Validators.maxLength(10000)]]
@@ -38,7 +40,7 @@ export class RolesProcesoComponent implements OnInit {
   cargar(pagina = this.pagina): void {
     this.cargando = true;
     this.error = '';
-    this.servicio.listar('', pagina, 20).subscribe({
+    this.servicio.listar(this.filtroNombre, pagina, 20).subscribe({
       next: pagina => {
         this.roles = pagina.contenido.filter(rol => rol.activo);
         this.pagina = pagina.pagina;
@@ -53,6 +55,17 @@ export class RolesProcesoComponent implements OnInit {
         this.cambios.markForCheck();
       }
     });
+  }
+
+  buscar(): void {
+    this.filtroNombre = this.nombreBusqueda.value.trim();
+    this.cargar(0);
+  }
+
+  limpiarBusqueda(): void {
+    this.nombreBusqueda.setValue('');
+    this.filtroNombre = '';
+    this.cargar(0);
   }
 
   editar(rol: RolProceso): void {
