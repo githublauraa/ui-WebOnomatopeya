@@ -179,6 +179,18 @@ export interface Mensaje {
   version: number;
 }
 
+export interface MensajeDatos {
+  nodoId: number;
+  sentido: 'ENVIO' | 'RECEPCION';
+  nombre: string;
+  origenExterno: boolean;
+  correlacionTipo: 'NEGOCIO' | 'CAMPO' | null;
+  correlacionNegocio: string | null;
+  correlacionCampoId: number | null;
+  politicaSinCorrespondencia: 'DESCARTAR' | 'INICIAR_CASO' | null;
+  version?: number;
+}
+
 export interface CampoMensaje {
   id: number;
   mensajeId: number;
@@ -189,12 +201,23 @@ export interface CampoMensaje {
   version: number;
 }
 
+export interface CampoMensajeDatos {
+  nombre: string;
+  tipoDato: CampoMensaje['tipoDato'];
+  orden: number;
+  version?: number;
+}
+
 export interface UsoMensajeActividad {
   id: number;
   mensajeId: number;
   actividadId: number;
   activo: boolean;
   version: number;
+}
+
+export interface UsoMensajeDatos {
+  actividadId: number;
 }
 
 export interface FlujoMensaje {
@@ -209,4 +232,15 @@ export interface FlujoMensaje {
   actividadErrorId: number | null;
   activo: boolean;
   version: number;
+}
+
+export interface FlujoMensajeDatos {
+  poolOrigenId: number;
+  poolDestinoId: number;
+  nodoOrigenId: number | null;
+  nodoDestinoId: number | null;
+  tipoDestino: FlujoMensaje['tipoDestino'];
+  politicaFallo: FlujoMensaje['politicaFallo'];
+  actividadErrorId: number | null;
+  version?: number;
 }
