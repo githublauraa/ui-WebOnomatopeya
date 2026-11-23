@@ -41,7 +41,9 @@
   </form>
   @if (cargando) { <p>Cargando roles...</p> }
   @if (!cargando) {
-    <table class="table table-striped align-middle"><thead><tr><th>Nombre</th><th>Descripción</th><th>Procesos en uso</th><th>Acciones</th></tr></thead>
+    <table class="table table-striped align-middle">
+      <caption class="visually-hidden">Roles del proceso</caption>
+      <thead><tr><th>Nombre</th><th>Descripción</th><th>Procesos en uso</th><th>Acciones</th></tr></thead>
       <tbody>
       @for (rol of roles; track rol.id) {
         <tr><td>{{rol.nombre}}</td><td>{{rol.descripcion || '—'}}</td><td>{{rol.procesosEnUso.length}}</td>

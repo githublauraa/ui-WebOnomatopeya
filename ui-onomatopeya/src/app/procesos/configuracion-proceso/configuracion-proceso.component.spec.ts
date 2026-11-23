@@ -47,4 +47,18 @@ describe('ConfiguracionProcesoComponent', () => {
       rolAcceso: 'EDITOR', recurso: 'POOL', accion: 'CREAR', permitido: true, version: undefined
     });
   });
+
+  it('describe la tabla de permisos para lectores de pantalla', async () => {
+    permisos.listar.mockReturnValueOnce(of([{
+      id: 1, procesoId: 7, rolAcceso: 'EDITOR', recurso: 'POOL', accion: 'CREAR',
+      permitido: true, version: 0
+    }]) as never);
+    const vista = TestBed.createComponent(ConfiguracionProcesoComponent);
+    vista.detectChanges();
+    await vista.whenStable();
+    vista.detectChanges();
+
+    expect((vista.nativeElement as HTMLElement).querySelector('caption')?.textContent)
+      .toContain('Permisos de estructura');
+  });
 });

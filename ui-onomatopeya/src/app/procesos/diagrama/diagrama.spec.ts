@@ -1,3 +1,4 @@
+import { Arco, Diagrama, FlujoMensaje, Nodo, Pool } from '../../models/diagrama.model';
 import { Proceso } from '../../models/proceso.model';
 import { AuthService } from '../../services/auth.service';
 import { provideHttpClient } from '@angular/common/http';
@@ -189,4 +190,369 @@ describe('DiagramaComponent', () => {
     expect(vista.componentInstance.puedeEditarPool).toBe(false);
     expect(vista.componentInstance.puedeCrearLane).toBe(false);
   });
+
+  it('crea y actualiza pools y lanes con los datos exigidos por la API', () => {
+    const vista = TestBed.createComponent(DiagramaComponent);
+    const componente = vista.componentInstance;
+    componente.diagrama = diagramaBase();
+
+    componente.iniciarCreacionPool();
+    componente.formularioPool.patchValue({ nombre: 'Proveedor', tipoParticipante: 'PROVEEDOR' });
+    componente.guardarPool();
+    const crearPool = peticiones.expectOne('/api/procesos/7/pools');
+    expect(crearPool.request.method).toBe('POST');
+    expect(crearPool.request.body.nombre).toBe('Proveedor');
+    crearPool.flush(componente.diagrama.pools[0]);
+    responderRecarga();
+
+    const pool = componente.diagrama!.pools[0];
+    componente.iniciarEdicionPool(pool);
+    componente.formularioPool.patchValue({ nombre: 'Empresa actualizada' });
+    componente.guardarPool();
+    const editarPool = peticiones.expectOne('/api/procesos/7/pools/10');
+    expect(editarPool.request.body.version).toBe(2);
+    editarPool.flush({ ...pool, nombre: 'Empresa actualizada' });
+    responderRecarga();
+
+    componente.roles = [{
+      id: 5, nombre: 'Analista', descripcion: '', activo: true, version: 0, procesosEnUso: []
+    }];
+    componente.iniciarCreacionLane(componente.diagrama!.pools[0]);
+    componente.guardarLane();
+    const crearLane = peticiones.expectOne('/api/procesos/7/pools/10/lanes');
+    expect(crearLane.request.body).toEqual({ rolProcesoId: 5, orden: 3, altura: 200 });
+    crearLane.flush(componente.diagrama!.lanes[0]);
+    responderRecarga();
+
+    const lane = componente.diagrama!.lanes[0];
+    componente.iniciarEdicionLane(lane);
+    componente.formularioLane.patchValue({ altura: 240 });
+    componente.guardarLane();
+    const editarLane = peticiones.expectOne('/api/procesos/7/pools/10/lanes/20');
+    expect(editarLane.request.body).toEqual({ rolProcesoId: 5, orden: 1, altura: 240, version: 3 });
+    editarLane.flush({ ...lane, altura: 240 });
+    responderRecarga();
+
+    expect(componente.aviso).toBe('Lane actualizada correctamente.');
+
+    function responderRecarga(): void {
+      peticiones.expectOne('/api/procesos/7/diagrama').flush(diagramaBase());
+    }
+  });
+
+  it('crea actividades, gateways y eventos con los campos propios de cada clase', () => {
+    const vista = TestBed.createComponent(DiagramaComponent);
+    const componente = vista.componentInstance;
+    componente.diagrama = diagramaBase();
+    const pool = componente.diagrama.pools[0];
+
+    componente.iniciarCreacionNodo(pool);
+    componente.formularioNodo.patchValue({ nombre: 'Registrar solicitud' });
+    componente.guardarNodo();
+    const actividad = peticiones.expectOne('/api/procesos/7/nodos');
+    expect(actividad.request.body).toMatchObject({
+      clase: 'ACTIVIDAD', poolId: 10, laneId: 20, tipoActividad: 'TAREA'
+    });
+    actividad.flush(componente.diagrama.nodos[0]);
+    responderRecarga();
+
+    componente.iniciarCreacionNodo(pool);
+    componente.formularioNodo.patchValue({
+      clase: 'GATEWAY', nombre: '¿Aprobado?', tipoGateway: 'INCLUSIVO', direccionGateway: 'DIVERGENCIA'
+    });
+    componente.guardarNodo();
+    const gateway = peticiones.expectOne('/api/procesos/7/nodos');
+    expect(gateway.request.body).toMatchObject({
+      clase: 'GATEWAY', tipoGateway: 'INCLUSIVO', direccionGateway: 'DIVERGENCIA'
+    });
+    gateway.flush(componente.diagrama.nodos[1]);
+    responderRecarga();
+
+    componente.iniciarCreacionNodo(pool);
+    componente.formularioNodo.patchValue({
+      clase: 'EVENTO', nombre: 'Aviso recibido', tipoEvento: 'INTERMEDIO',
+      naturalezaEvento: 'MENSAJE', operacionMensaje: 'RECEPCION'
+    });
+    componente.guardarNodo();
+    const evento = peticiones.expectOne('/api/procesos/7/nodos');
+    expect(evento.request.body).toMatchObject({
+      clase: 'EVENTO', tipoEvento: 'INTERMEDIO', naturalezaEvento: 'MENSAJE', operacionMensaje: 'RECEPCION'
+    });
+    evento.flush(componente.diagrama.nodos[2]);
+    responderRecarga();
+
+    function responderRecarga(): void {
+      peticiones.expectOne('/api/procesos/7/diagrama').flush(diagramaBase());
+    }
+  });
+
+  it('valida que los nodos permanezcan dentro del pool y de su lane', () => {
+    const vista = TestBed.createComponent(DiagramaComponent);
+    const componente = vista.componentInstance;
+    componente.diagrama = diagramaBase();
+    componente.iniciarCreacionNodo(componente.diagrama.pools[0]);
+
+    componente.formularioNodo.patchValue({ nombre: 'Fuera', posicionX: 590, ancho: 140 });
+    componente.crearNodo();
+    expect(componente.errorNodo).toContain('dentro del pool');
+
+    componente.formularioNodo.patchValue({ posicionX: 10, posicionY: 180, alto: 70, laneId: 20 });
+    componente.crearNodo();
+    expect(componente.errorNodo).toContain('dentro de su lane');
+    peticiones.expectNone(peticion => peticion.method === 'POST');
+  });
+
+  it('actualiza una posición sin reconstruir el diagrama completo', () => {
+    const vista = TestBed.createComponent(DiagramaComponent);
+    const componente = vista.componentInstance;
+    componente.diagrama = diagramaBase();
+    const actividad = componente.diagrama.nodos[0];
+
+    componente.moverNodoEnLienzo({ nodo: actividad, posicionX: 180, posicionY: 230, laneId: 21 });
+    const actualizacion = peticiones.expectOne('/api/procesos/7/nodos/30');
+    expect(actualizacion.request.method).toBe('PUT');
+    expect(actualizacion.request.body).toMatchObject({ posicionX: 180, posicionY: 230, laneId: 21 });
+    actualizacion.flush({ ...actividad, posicionX: 180, posicionY: 230, laneId: 21 });
+
+    expect(componente.diagrama.nodos.find(nodo => nodo.id === 30)?.posicionX).toBe(180);
+    expect(componente.movimientoFinalizado?.nodoId).toBe(30);
+    peticiones.expectNone('/api/procesos/7/diagrama');
+  });
+
+  it('impide arcos inválidos y crea una conexión válida entre nodos del mismo pool', () => {
+    const vista = TestBed.createComponent(DiagramaComponent);
+    const componente = vista.componentInstance;
+    componente.diagrama = diagramaBase();
+
+    componente.iniciarCreacionArco(componente.diagrama.pools[0]);
+    componente.formularioArco.patchValue({ origenId: 31, destinoId: 30, condicionSalida: '' });
+    componente.crearArco();
+    expect(componente.errorArco).toContain('requiere una condición');
+
+    componente.formularioArco.patchValue({ origenId: 30, destinoId: 32, condicionSalida: 'monto > 0' });
+    componente.crearArco();
+    expect(componente.errorArco).toContain('Solo las salidas de gateway');
+
+    componente.formularioArco.patchValue({ origenId: 31, destinoId: 32, condicionSalida: 'aprobado' });
+    componente.crearArco();
+    const solicitud = peticiones.expectOne('/api/procesos/7/arcos');
+    expect(solicitud.request.body).toEqual({
+      origenId: 31, destinoId: 32, etiqueta: null, condicionSalida: 'aprobado'
+    });
+    solicitud.flush(componente.diagrama.arcos[0]);
+    peticiones.expectOne('/api/procesos/7/diagrama').flush(diagramaBase());
+  });
+
+  it('agrega una conexión visual válida sin recargar los demás elementos', () => {
+    const vista = TestBed.createComponent(DiagramaComponent);
+    const componente = vista.componentInstance;
+    componente.diagrama = diagramaBase();
+    const cantidadInicial = componente.diagrama.arcos.length;
+
+    componente.crearConexionEnLienzo({ origenId: 30, destinoId: 31 });
+    const solicitud = peticiones.expectOne('/api/procesos/7/arcos');
+    expect(solicitud.request.body).toEqual({
+      origenId: 30, destinoId: 31, etiqueta: '', condicionSalida: ''
+    });
+    solicitud.flush({ id: 99, poolId: 10, origenId: 30, destinoId: 31, etiqueta: null, condicionSalida: null });
+
+    expect(componente.diagrama.arcos).toHaveLength(cantidadInicial + 1);
+    peticiones.expectNone('/api/procesos/7/diagrama');
+  });
+
+  it('retira estructuras con confirmación y conserva el historial', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const vista = TestBed.createComponent(DiagramaComponent);
+    const componente = vista.componentInstance;
+    componente.diagrama = diagramaBase();
+
+    componente.retirarPool(componente.diagrama.pools[0]);
+    const pool = peticiones.expectOne('/api/procesos/7/pools/10');
+    expect(pool.request.body).toEqual({ version: 2, confirmar: true });
+    pool.flush(null);
+    responderRecarga();
+
+    componente.retirarLane(componente.diagrama!.lanes[0]);
+    const lane = peticiones.expectOne('/api/procesos/7/pools/10/lanes/20');
+    expect(lane.request.body).toEqual({ version: 3, confirmar: true });
+    lane.flush(null);
+    responderRecarga();
+
+    componente.retirarNodo(componente.diagrama!.nodos[0]);
+    const nodo = peticiones.expectOne('/api/procesos/7/nodos/30');
+    expect(nodo.request.body).toEqual({ version: 4, confirmar: true });
+    nodo.flush([]);
+    responderRecarga();
+
+    componente.retirarArco(componente.diagrama!.arcos[0]);
+    const arco = peticiones.expectOne('/api/procesos/7/arcos/40');
+    expect(arco.request.body).toEqual({ version: 4, confirmar: true });
+    arco.flush([]);
+    responderRecarga();
+
+    function responderRecarga(): void {
+      peticiones.expectOne('/api/procesos/7/diagrama').flush(diagramaBase());
+    }
+  });
+
+  it('presenta nombres, posiciones y correlación de los flujos de mensaje', () => {
+    const vista = TestBed.createComponent(DiagramaComponent);
+    const componente = vista.componentInstance;
+    componente.diagrama = diagramaBase();
+    const flujo: FlujoMensaje = {
+      id: 80, procesoId: 7, poolOrigenId: 10, poolDestinoId: null,
+      nodoOrigenId: 32, nodoDestinoId: null, tipoDestino: 'CORREO', politicaFallo: 'CONTINUAR',
+      actividadErrorId: null, activo: true, version: 0
+    };
+
+    expect(componente.lanesDePool(10).map(lane => lane.id)).toEqual([20, 21]);
+    expect(componente.nodosDePool(10)).toHaveLength(3);
+    expect(componente.arcosDePool(10)).toHaveLength(1);
+    expect(componente.altoLienzo(componente.diagrama.pools[0])).toBe(400);
+    expect(componente.anchoLienzo(componente.diagrama.pools[0])).toBe(620);
+    expect(componente.nombrePool(null)).toBe('participante externo');
+    expect(componente.nombreNodo(999)).toBe('Nodo 999');
+    expect(componente.etiquetaFlujo(flujo)).toBe('Solicitud enviada');
+    expect(componente.correlacionFlujo(flujo)).toBe('radicado');
+  });
+
+  it('presenta los formularios y estados completos del editor del diagrama', async () => {
+    const vista = TestBed.createComponent(DiagramaComponent);
+    vista.detectChanges();
+    peticiones.match(peticion => peticion.url === '/api/roles-proceso').forEach(peticion => peticion.flush({
+      contenido: [{
+        id: 5, nombre: 'Analista', descripcion: '', activo: true, version: 0, procesosEnUso: []
+      }],
+      pagina: 0, paginas: 1, total: 1, tamanio: 100
+    }));
+    const datos = diagramaBase();
+    datos.pools.push({
+      ...datos.pools[0], id: 11, nombre: 'Proveedor', propietario: false, cajaNegra: true, orden: 2
+    });
+    datos.flujos.push({
+      id: 80, procesoId: 7, poolOrigenId: 10, poolDestinoId: 11, nodoOrigenId: 32,
+      nodoDestinoId: null, tipoDestino: 'CORREO', politicaFallo: 'CONTINUAR',
+      actividadErrorId: null, activo: true, version: 0
+    });
+    datos.advertencias.push('El flujo externo no tiene nodo de recepción.');
+    peticiones.expectOne('/api/procesos/7/diagrama').flush(datos);
+    await vista.whenStable();
+
+    const componente = vista.componentInstance;
+    componente.roles = [{
+      id: 5, nombre: 'Analista', descripcion: '', activo: true, version: 0, procesosEnUso: []
+    }];
+    await pulsar('Editar descripción');
+    await pulsar('Agregar pool');
+    await pulsar('Agregar lane');
+    await pulsar('Agregar nodo');
+    await pulsar('Conectar nodos');
+    componente.errorPool = 'Revisa el pool.';
+    componente.errorLane = 'Revisa la lane.';
+    componente.errorNodo = 'Revisa el nodo.';
+    componente.errorArco = 'Revisa el arco.';
+    componente.aviso = 'Cambios guardados.';
+    componente.formularioPool.markAllAsTouched();
+    componente.formularioLane.markAllAsTouched();
+    componente.formularioNodo.markAllAsTouched();
+    vista.changeDetectorRef.markForCheck();
+    vista.detectChanges();
+    await vista.whenStable();
+    vista.detectChanges();
+
+    let texto = (vista.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Nuevo pool');
+    expect(texto).toContain('Nueva lane');
+    expect(texto).toContain('Nuevo nodo');
+    expect(texto).toContain('Nuevo arco');
+    expect(texto).toContain('Mensajes entre participantes');
+    expect(texto).toContain('El flujo externo no tiene nodo de recepción.');
+    expect(texto).toContain('Caja negra');
+
+    componente.formularioNodo.patchValue({ clase: 'GATEWAY' });
+    componente.iniciarEdicionPool(componente.diagrama!.pools[0]);
+    componente.iniciarEdicionLane(componente.diagrama!.lanes[0]);
+    componente.iniciarEdicionNodo(componente.diagrama!.nodos[1]);
+    componente.iniciarEdicionArco(componente.diagrama!.arcos[0]);
+    componente.guardandoPool = true;
+    componente.guardandoLane = true;
+    componente.guardandoNodo = true;
+    componente.guardandoArco = true;
+    vista.changeDetectorRef.markForCheck();
+    vista.detectChanges();
+    await vista.whenStable();
+    vista.detectChanges();
+    texto = (vista.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Editar pool');
+    expect(texto).toContain('Editar lane');
+    expect(texto).toContain('Tipo de gateway');
+    expect(texto).toContain('Guardando...');
+
+    componente.formularioNodo.patchValue({ clase: 'EVENTO', naturalezaEvento: 'MENSAJE' });
+    vista.changeDetectorRef.markForCheck();
+    vista.detectChanges();
+    await vista.whenStable();
+    vista.detectChanges();
+    texto = (vista.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Tipo de evento');
+    expect(texto).toContain('Operación de mensaje');
+
+    async function pulsar(textoBoton: string): Promise<void> {
+      const boton = Array.from((vista.nativeElement as HTMLElement).querySelectorAll('button'))
+        .find(actual => actual.textContent?.trim() === textoBoton);
+      expect(boton, `No se encontró el botón ${textoBoton}`).toBeDefined();
+      boton!.click();
+      await vista.whenStable();
+      vista.detectChanges();
+    }
+  });
+
+  function diagramaBase(): Diagrama {
+    const proceso: Proceso = {
+      id: 7, empresaId: 1, creadorId: 1, nombre: 'Compras', descripcion: 'Proceso de compras',
+      categoria: 'Administración', estadoPublicacion: 'BORRADOR', activo: true,
+      fechaCreacion: '2026-11-20T10:00:00Z', version: 4
+    };
+    const pool: Pool = {
+      id: 10, nombre: 'Empresa', tipoParticipante: 'EMPRESA', propietario: true,
+      cajaNegra: false, posicionX: 0, posicionY: 0, ancho: 600, alto: 400, orden: 1, version: 2
+    };
+    const actividad: Nodo = {
+      id: 30, clase: 'ACTIVIDAD', poolId: 10, nombre: 'Registrar', posicionX: 40, posicionY: 60,
+      ancho: 140, alto: 70, estado: 'ACTIVO', laneId: 20, tipoActividad: 'TAREA',
+      tipoGateway: null, direccionGateway: null, tipoEvento: null, naturalezaEvento: null,
+      operacionMensaje: null
+    };
+    const gateway: Nodo = {
+      ...actividad, id: 31, clase: 'GATEWAY', nombre: '¿Aprobado?', posicionX: 230,
+      laneId: null, tipoActividad: null, tipoGateway: 'EXCLUSIVO', direccionGateway: 'DIVERGENCIA'
+    };
+    const evento: Nodo = {
+      ...actividad, id: 32, clase: 'EVENTO', nombre: 'Enviar aviso', posicionX: 430,
+      laneId: null, tipoActividad: null, tipoEvento: 'FIN', naturalezaEvento: 'MENSAJE',
+      operacionMensaje: 'ENVIO'
+    };
+    const arco: Arco = {
+      id: 40, poolId: 10, origenId: 31, destinoId: 32, etiqueta: 'Sí', condicionSalida: 'aprobado'
+    };
+    return {
+      proceso,
+      pools: [pool],
+      lanes: [
+        { id: 20, poolId: 10, rolProcesoId: 5, nombre: 'Solicitante', orden: 1, altura: 200, version: 3 },
+        { id: 21, poolId: 10, rolProcesoId: 6, nombre: 'Aprobador', orden: 2, altura: 200, version: 1 }
+      ],
+      nodos: [actividad, gateway, evento],
+      arcos: [arco],
+      mensajes: [{
+        mensaje: {
+          id: 70, nodoId: 32, sentido: 'ENVIO', nombre: 'Solicitud enviada', origenExterno: false,
+          correlacionTipo: 'NEGOCIO', correlacionNegocio: 'radicado', correlacionCampoId: null,
+          politicaSinCorrespondencia: null, activo: true, version: 0
+        },
+        campos: [], usos: []
+      }],
+      flujos: [], advertencias: []
+    };
+  }
 });

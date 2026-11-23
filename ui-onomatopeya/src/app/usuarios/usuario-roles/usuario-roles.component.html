@@ -9,6 +9,7 @@
   @if (cargando) { <p>Cargando usuarios...</p> }
   @if (!cargando) {
     <table class="table table-striped align-middle">
+      <caption class="visually-hidden">Roles asignados a los usuarios</caption>
       <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Rol actual</th><th>Nuevo rol</th><th>Acción</th></tr></thead>
       <tbody>
         @for (u of usuarios; track u.id) {

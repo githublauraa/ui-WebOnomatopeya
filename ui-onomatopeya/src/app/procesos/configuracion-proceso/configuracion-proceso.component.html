@@ -66,6 +66,7 @@
 
         @if (permisos.length > 0) {
           <table class="table mt-4">
+            <caption class="visually-hidden">Permisos de estructura del proceso</caption>
             <thead><tr><th>Rol</th><th>Recurso</th><th>Acción</th><th>Resultado</th></tr></thead>
             <tbody>
               @for (item of permisos; track item.id) {

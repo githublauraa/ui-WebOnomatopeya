@@ -41,6 +41,8 @@ describe('UsuarioListComponent', () => {
     expect(contenido).toContain('ana@example.com');
     expect(contenido).toContain('ADMINISTRADOR');
     expect(contenido).toContain('ACTIVO');
+    expect((vista.nativeElement as HTMLElement).querySelector('caption')?.textContent)
+      .toContain('Usuarios de la empresa');
     peticiones.verify();
   });
 
