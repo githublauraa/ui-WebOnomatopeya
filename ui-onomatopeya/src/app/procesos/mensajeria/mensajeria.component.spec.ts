@@ -57,4 +57,50 @@ describe('MensajeriaComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('form')).toBeNull();
   });
+
+  it('bloquea nodo y sentido al editar una declaración existente', () => {
+    const detalle = {
+      mensaje: { id: 2, nodoId: 4, sentido: 'ENVIO' as const, nombre: 'Pedido',
+        origenExterno: false, correlacionTipo: null, correlacionNegocio: null,
+        correlacionCampoId: null, politicaSinCorrespondencia: null, activo: true, version: 1 },
+      campos: [], usos: []
+    };
+
+    fixture.componentInstance.editarMensaje(detalle);
+
+    expect(fixture.componentInstance.formularioMensaje.controls.nodoId.disabled).toBe(true);
+    expect(fixture.componentInstance.formularioMensaje.controls.sentido.disabled).toBe(true);
+  });
+
+  it('no permite retirar mensajes a un editor', () => {
+    const detalle = {
+      mensaje: { id: 2, nodoId: 4, sentido: 'ENVIO' as const, nombre: 'Pedido',
+        origenExterno: false, correlacionTipo: null, correlacionNegocio: null,
+        correlacionCampoId: null, politicaSinCorrespondencia: null, activo: true, version: 1 },
+      campos: [], usos: []
+    };
+    fixture.componentRef.setInput('retirable', false);
+
+    fixture.componentInstance.retirarMensaje(detalle);
+
+    expect(servicio.retirarMensaje).not.toHaveBeenCalled();
+  });
+
+  it('solo ofrece actividades del mismo pool para mensajes recibidos', () => {
+    const detalle = {
+      mensaje: { id: 2, nodoId: 4, sentido: 'RECEPCION' as const, nombre: 'Pedido',
+        origenExterno: false, correlacionTipo: null, correlacionNegocio: null,
+        correlacionCampoId: null, politicaSinCorrespondencia: null, activo: true, version: 1 },
+      campos: [], usos: []
+    };
+    fixture.componentInstance.diagrama.nodos.push(
+      { ...fixture.componentInstance.diagrama.nodos[0], id: 5, clase: 'ACTIVIDAD',
+        tipoActividad: 'TAREA', naturalezaEvento: null, operacionMensaje: null },
+      { ...fixture.componentInstance.diagrama.nodos[0], id: 6, poolId: 99, clase: 'ACTIVIDAD',
+        tipoActividad: 'TAREA', naturalezaEvento: null, operacionMensaje: null }
+    );
+    fixture.componentInstance.seleccionarMensaje(detalle);
+
+    expect(fixture.componentInstance.actividadesUso.map(actividad => actividad.id)).toEqual([5]);
+  });
 });

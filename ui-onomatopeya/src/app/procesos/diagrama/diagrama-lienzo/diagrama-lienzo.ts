@@ -25,6 +25,8 @@ export interface MovimientoNodo {
 })
 export class DiagramaLienzoComponent {
   @Input() editable = false;
+  @Input() laneEditable = false;
+  @Input() laneRetirable = false;
   /** Mantener visibles los puntos de conexión mientras se espera a la API. */
   @Input() bloqueado = false;
   /** Borrar la vista previa después de guardar o revertir una posición. */

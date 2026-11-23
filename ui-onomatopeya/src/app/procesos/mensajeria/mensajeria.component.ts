@@ -28,6 +28,7 @@ export class MensajeriaComponent {
 
   @Input({ required: true }) diagrama!: Diagrama;
   @Input() editable = false;
+  @Input() retirable = false;
   @Output() actualizado = new EventEmitter<void>();
 
   mensajeEditando: Mensaje | null = null;
@@ -80,6 +81,25 @@ export class MensajeriaComponent {
     return this.diagrama.nodos.filter(nodo => nodo.clase === 'ACTIVIDAD' && nodo.estado !== 'RETIRADO');
   }
 
+  get actividadesUso(): Nodo[] {
+    if (this.mensajeActivo?.mensaje.sentido !== 'RECEPCION') return [];
+    const nodoMensaje = this.diagrama.nodos.find(nodo => nodo.id === this.mensajeActivo?.mensaje.nodoId);
+    return this.actividades.filter(actividad => actividad.poolId === nodoMensaje?.poolId);
+  }
+
+  get actividadesError(): Nodo[] {
+    const poolId = this.formularioFlujo.controls.poolOrigenId.value;
+    return this.actividades.filter(actividad => actividad.poolId === poolId);
+  }
+
+  get nodosOrigenFlujo(): Nodo[] {
+    return this.nodosFlujo(this.formularioFlujo.controls.poolOrigenId.value, 'ENVIO');
+  }
+
+  get nodosDestinoFlujo(): Nodo[] {
+    return this.nodosFlujo(this.formularioFlujo.controls.poolDestinoId.value, 'RECEPCION');
+  }
+
   seleccionarMensaje(detalle: MensajeDetalle): void {
     this.mensajeActivo = detalle;
     this.campoEditando = null;
@@ -89,6 +109,8 @@ export class MensajeriaComponent {
 
   nuevoMensaje(): void {
     this.mensajeEditando = null;
+    this.formularioMensaje.controls.nodoId.enable();
+    this.formularioMensaje.controls.sentido.enable();
     this.limpiarEstado();
     this.formularioMensaje.reset({
       nodoId: this.nodosMensaje[0]?.id ?? 0,
@@ -116,6 +138,8 @@ export class MensajeriaComponent {
       correlacionCampoId: detalle.mensaje.correlacionCampoId,
       politicaSinCorrespondencia: detalle.mensaje.politicaSinCorrespondencia
     });
+    this.formularioMensaje.controls.nodoId.disable();
+    this.formularioMensaje.controls.sentido.disable();
   }
 
   guardarMensaje(): void {
@@ -141,7 +165,7 @@ export class MensajeriaComponent {
   }
 
   retirarMensaje(detalle: MensajeDetalle): void {
-    if (!this.editable || !confirm(`¿Retirar el mensaje ${detalle.mensaje.nombre}?`)) return;
+    if (!this.retirable || !confirm(`¿Retirar el mensaje ${detalle.mensaje.nombre}?`)) return;
     this.ejecutar(
       this.servicio.retirarMensaje(this.diagrama.proceso.id, detalle.mensaje.id, detalle.mensaje.version),
       'Mensaje retirado.'
@@ -170,14 +194,15 @@ export class MensajeriaComponent {
   }
 
   retirarCampo(campo: CampoMensaje): void {
-    if (!this.editable || !this.mensajeActivo || !confirm(`¿Retirar el campo ${campo.nombre}?`)) return;
+    if (!this.retirable || !this.mensajeActivo || !confirm(`¿Retirar el campo ${campo.nombre}?`)) return;
     this.ejecutar(this.servicio.retirarCampo(
       this.diagrama.proceso.id, this.mensajeActivo.mensaje.id, campo.id, campo.version
     ), 'Campo retirado.');
   }
 
   guardarUso(): void {
-    if (!this.editable || !this.mensajeActivo || this.formularioUso.invalid || this.guardando) return;
+    if (!this.editable || !this.mensajeActivo || this.mensajeActivo.mensaje.sentido !== 'RECEPCION'
+      || this.formularioUso.invalid || this.guardando) return;
     this.ejecutar(this.servicio.crearUso(
       this.diagrama.proceso.id,
       this.mensajeActivo.mensaje.id,
@@ -186,7 +211,7 @@ export class MensajeriaComponent {
   }
 
   retirarUso(uso: UsoMensajeActividad): void {
-    if (!this.editable || !this.mensajeActivo) return;
+    if (!this.retirable || !this.mensajeActivo) return;
     this.ejecutar(this.servicio.retirarUso(
       this.diagrama.proceso.id, this.mensajeActivo.mensaje.id, uso.id, uso.version
     ), 'Uso retirado.');
@@ -222,6 +247,10 @@ export class MensajeriaComponent {
       this.formularioFlujo.markAllAsTouched();
       return;
     }
+    if (this.formularioFlujo.controls.poolOrigenId.value === this.formularioFlujo.controls.poolDestinoId.value) {
+      this.error = 'El pool de origen y el pool de destino deben ser diferentes.';
+      return;
+    }
     const datos: FlujoMensajeDatos = {
       ...this.formularioFlujo.getRawValue(),
       version: this.flujoEditando?.version
@@ -235,7 +264,7 @@ export class MensajeriaComponent {
   }
 
   retirarFlujo(flujo: FlujoMensaje): void {
-    if (!this.editable || !confirm('¿Retirar este flujo de mensaje?')) return;
+    if (!this.retirable || !confirm('¿Retirar este flujo de mensaje?')) return;
     this.ejecutar(this.servicio.retirarFlujo(
       this.diagrama.proceso.id, flujo.id, flujo.version
     ), 'Flujo retirado.');
@@ -269,5 +298,12 @@ export class MensajeriaComponent {
   private limpiarEstado(): void {
     this.error = '';
     this.aviso = '';
+  }
+
+  private nodosFlujo(poolId: number, sentido: Mensaje['sentido']): Nodo[] {
+    const ids = new Set(this.diagrama.mensajes
+      .filter(detalle => detalle.mensaje.sentido === sentido)
+      .map(detalle => detalle.mensaje.nodoId));
+    return this.diagrama.nodos.filter(nodo => nodo.poolId === poolId && ids.has(nodo.id));
   }
 }

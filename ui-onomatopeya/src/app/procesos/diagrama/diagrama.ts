@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import {
   Arco, ArcoDatos, Diagrama, DireccionGateway, FlujoMensaje, Lane, LaneCrearDatos, LaneEditarDatos, MensajeDetalle,
   Nodo, NodoDatos, OperacionEventoMensaje, Pool, PoolCrearDatos, PoolEditarDatos,
@@ -15,6 +16,8 @@ import { ProcesoService } from '../../services/proceso.service';
 import { RolProcesoService } from '../../services/rol-proceso.service';
 import { ConexionLienzo, DiagramaLienzoComponent, MovimientoNodo } from './diagrama-lienzo/diagrama-lienzo';
 import { MensajeriaComponent } from '../mensajeria/mensajeria.component';
+import { AccionEstructura, RecursoEstructura } from '../../models/permiso-estructura.model';
+import { PermisoEstructuraService } from '../../services/permiso-estructura.service';
 
 @Component({
   selector: 'app-diagrama',
@@ -30,6 +33,7 @@ export class DiagramaComponent implements OnInit {
   private diagramaService = inject(DiagramaService);
   private procesoService = inject(ProcesoService);
   private rolProcesoService = inject(RolProcesoService);
+  private permisoEstructuraService = inject(PermisoEstructuraService);
   private cambios = inject(ChangeDetectorRef);
   private fb = inject(FormBuilder);
 
@@ -56,6 +60,7 @@ export class DiagramaComponent implements OnInit {
   guardandoArco = false;
   cargandoRoles = false;
   roles: RolProceso[] = [];
+  private permisosEstructura = new Map<string, boolean>();
   errorNodo = '';
   errorArco = '';
   formulario = this.fb.nonNullable.group({
@@ -106,6 +111,13 @@ export class DiagramaComponent implements OnInit {
     return !!this.diagrama && this.auth.esAdministrador(this.diagrama.proceso);
   }
 
+  get puedeCrearPool(): boolean { return this.puedeUsarEstructura('POOL', 'CREAR'); }
+  get puedeEditarPool(): boolean { return this.puedeUsarEstructura('POOL', 'EDITAR'); }
+  get puedeRetirarPool(): boolean { return this.puedeUsarEstructura('POOL', 'RETIRAR'); }
+  get puedeCrearLane(): boolean { return this.puedeUsarEstructura('LANE', 'CREAR'); }
+  get puedeEditarLane(): boolean { return this.puedeUsarEstructura('LANE', 'EDITAR'); }
+  get puedeRetirarLane(): boolean { return this.puedeUsarEstructura('LANE', 'RETIRAR'); }
+
   ngOnInit(): void {
     const idProceso = Number(this.ruta.snapshot.paramMap.get('id'));
 
@@ -128,6 +140,7 @@ export class DiagramaComponent implements OnInit {
         this.diagrama = respuesta;
         this.formulario.reset({ descripcion: respuesta.proceso.descripcion ?? '' });
         this.cargando = false;
+        this.cargarPermisosEstructura();
         this.cambios.markForCheck();
       },
       error: (error) => {
@@ -154,7 +167,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarCreacionPool(): void {
-    if (!this.puedeEditar) return;
+    if (!this.puedeCrearPool) return;
     const orden = Math.max(0, ...(this.diagrama?.pools ?? []).map((pool) => pool.orden)) + 1;
     this.formularioPool.reset({
       nombre: '', tipoParticipante: 'EMPRESA', cajaNegra: false,
@@ -173,7 +186,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarEdicionPool(pool: Pool): void {
-    if (!this.puedeEditar) return;
+    if (!this.puedeEditarPool) return;
     this.formularioPool.reset({
       nombre: pool.nombre,
       tipoParticipante: pool.tipoParticipante,
@@ -191,13 +204,13 @@ export class DiagramaComponent implements OnInit {
   }
 
   guardarPool(): void {
-    if (!this.puedeEditar) return;
+    if (this.editandoPoolId === null ? !this.puedeCrearPool : !this.puedeEditarPool) return;
     if (this.editandoPoolId === null) this.crearPool();
     else this.actualizarPool(this.editandoPoolId);
   }
 
   actualizarPool(poolId: number): void {
-    if (!this.puedeEditar) return;
+    if (!this.puedeEditarPool) return;
     if (!this.diagrama || this.guardandoPool) return;
     if (this.formularioPool.invalid) {
       this.formularioPool.markAllAsTouched();
@@ -230,7 +243,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   retirarPool(pool: Pool): void {
-    if (!this.puedeEditar) return;
+    if (!this.puedeRetirarPool) return;
     if (!this.diagrama || this.guardandoPool) return;
     if (!window.confirm(`¿Retirar el pool "${pool.nombre}"? Esta acción no borra su historial.`)) return;
     const procesoId = this.diagrama.proceso.id;
@@ -267,7 +280,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarCreacionLane(pool: Pool): void {
-    if (!this.puedeEditar) return;
+    if (!this.puedeCrearLane) return;
     const orden = Math.max(-1, ...this.lanesDePool(pool.id).map((lane) => lane.orden)) + 1;
     this.formularioLane.reset({
       rolProcesoId: this.roles[0]?.id ?? 0,
@@ -287,7 +300,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   iniciarEdicionLane(lane: Lane): void {
-    if (!this.puedeEditar) return;
+    if (!this.puedeEditarLane) return;
     this.formularioLane.reset({
       rolProcesoId: lane.rolProcesoId ?? 0,
       orden: lane.orden,
@@ -300,13 +313,13 @@ export class DiagramaComponent implements OnInit {
   }
 
   guardarLane(): void {
-    if (!this.puedeEditar) return;
+    if (this.editandoLaneId === null ? !this.puedeCrearLane : !this.puedeEditarLane) return;
     if (this.editandoLaneId === null) this.crearLane();
     else this.actualizarLane(this.editandoLaneId);
   }
 
   actualizarLane(laneId: number): void {
-    if (!this.puedeEditar) return;
+    if (!this.puedeEditarLane) return;
     if (!this.diagrama || this.guardandoLane) return;
     if (this.formularioLane.invalid) {
       this.formularioLane.markAllAsTouched();
@@ -335,7 +348,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   retirarLane(lane: Lane): void {
-    if (!this.puedeEditar) return;
+    if (!this.puedeRetirarLane) return;
     if (!this.diagrama || this.guardandoLane) return;
     if (!window.confirm(`¿Retirar la lane "${lane.nombre}"? Primero resuelve las actividades que tenga asignadas.`)) return;
     const procesoId = this.diagrama.proceso.id;
@@ -356,7 +369,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   crearLane(): void {
-    if (!this.puedeEditar) return;
+    if (!this.puedeCrearLane) return;
     if (!this.diagrama || this.creandoLaneParaPoolId === null || this.guardandoLane) return;
     if (this.formularioLane.invalid) {
       this.formularioLane.markAllAsTouched();
@@ -819,7 +832,7 @@ export class DiagramaComponent implements OnInit {
   }
 
   crearPool(): void {
-    if (!this.puedeEditar) return;
+    if (!this.puedeCrearPool) return;
     if (!this.diagrama || this.guardandoPool) return;
     if (this.formularioPool.invalid) {
       this.formularioPool.markAllAsTouched();
@@ -961,5 +974,40 @@ export class DiagramaComponent implements OnInit {
     const detalle = this.mensajeDeFlujo(flujo);
     if (!detalle) return null;
     return detalle.mensaje.correlacionNegocio ?? detalle.campos[0]?.nombre ?? null;
+  }
+
+  private cargarPermisosEstructura(): void {
+    this.permisosEstructura.clear();
+    if (!this.diagrama || !this.puedeEditar || this.auth.esAdministrador(this.diagrama.proceso)) return;
+
+    const procesoId = this.diagrama.proceso.id;
+    const consultas = [
+      ['POOL', 'CREAR'], ['POOL', 'EDITAR'], ['POOL', 'RETIRAR'],
+      ['LANE', 'CREAR'], ['LANE', 'EDITAR'], ['LANE', 'RETIRAR']
+    ] as const;
+    forkJoin(consultas.map(([recurso, accion]) =>
+      this.permisoEstructuraService.verificar(procesoId, recurso, accion)
+    )).subscribe({
+      next: resultados => {
+        consultas.forEach(([recurso, accion], indice) => {
+          this.permisosEstructura.set(this.clavePermiso(recurso, accion), resultados[indice].permitido);
+        });
+        this.cambios.markForCheck();
+      },
+      error: () => {
+        this.errorPool = 'No fue posible consultar los permisos de pools y lanes.';
+        this.cambios.markForCheck();
+      }
+    });
+  }
+
+  private puedeUsarEstructura(recurso: RecursoEstructura, accion: AccionEstructura): boolean {
+    if (!this.diagrama || !this.puedeEditar) return false;
+    if (this.auth.esAdministrador(this.diagrama.proceso)) return true;
+    return this.permisosEstructura.get(this.clavePermiso(recurso, accion)) === true;
+  }
+
+  private clavePermiso(recurso: RecursoEstructura, accion: AccionEstructura): string {
+    return `${recurso}:${accion}`;
   }
 }

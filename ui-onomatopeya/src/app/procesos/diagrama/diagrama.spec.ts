@@ -165,4 +165,28 @@ describe('DiagramaComponent', () => {
     expect(componente.errorNodo).toContain('dentro del pool');
     peticiones.expectNone(p => p.method === 'POST');
   });
+
+  it('aplica al editor los permisos de pools y lanes que devuelve el backend', async () => {
+    TestBed.inject(AuthService).usuario.update(usuario => usuario && { ...usuario, rolAcceso: 'EDITOR' });
+    const vista = TestBed.createComponent(DiagramaComponent);
+    vista.detectChanges();
+    peticiones.match(p => p.url === '/api/roles-proceso').forEach(p =>
+      p.flush({ contenido: [], pagina: 0, paginas: 0, total: 0, tamanio: 100 }));
+    peticiones.expectOne('/api/procesos/7/diagrama').flush({
+      proceso: { id: 7, empresaId: 1, activo: true, nombre: 'Compras' },
+      pools: [], lanes: [], nodos: [], arcos: [], mensajes: [], flujos: [], advertencias: []
+    });
+    const permisos = peticiones.match(p => p.url.endsWith('/permisos-estructura/verificar'));
+    expect(permisos.length).toBe(6);
+    permisos.forEach(peticion => peticion.flush({
+      permitido: peticion.request.params.get('recurso') === 'POOL'
+        && peticion.request.params.get('accion') === 'CREAR'
+    }));
+    await vista.whenStable();
+    vista.detectChanges();
+
+    expect(vista.componentInstance.puedeCrearPool).toBe(true);
+    expect(vista.componentInstance.puedeEditarPool).toBe(false);
+    expect(vista.componentInstance.puedeCrearLane).toBe(false);
+  });
 });

@@ -51,8 +51,8 @@
         <p>Correlación: {{ detalle.mensaje.correlacionNegocio || 'No definida' }}</p>
         <p>{{ detalle.campos.length }} campos · {{ detalle.usos.length }} usos</p>
         <div class="acciones"><button class="btn btn-outline-secondary btn-sm" type="button" (click)="seleccionarMensaje(detalle)">Ver estructura</button>
-          @if (editable) { <button class="btn btn-outline-primary btn-sm" type="button" (click)="editarMensaje(detalle)">Editar</button>
-            <button class="btn btn-outline-danger btn-sm" type="button" (click)="retirarMensaje(detalle)">Retirar</button> }
+          @if (editable) { <button class="btn btn-outline-primary btn-sm" type="button" (click)="editarMensaje(detalle)">Editar</button> }
+          @if (retirable) { <button class="btn btn-outline-danger btn-sm" type="button" (click)="retirarMensaje(detalle)">Retirar</button> }
         </div>
       </article>
     } @empty { <p>No hay mensajes configurados.</p> }
@@ -66,7 +66,7 @@
           <ul class="list-group mb-3">@for (campo of detalle.campos; track campo.id) {
             <li class="list-group-item d-flex justify-content-between"><span>{{ campo.orden }}. {{ campo.nombre }} ({{ campo.tipoDato }})</span>
               @if (editable) { <span><button class="btn btn-sm btn-outline-primary" type="button" (click)="editarCampo(campo)">Editar</button>
-                <button class="btn btn-sm btn-outline-danger ms-1" type="button" (click)="retirarCampo(campo)">Retirar</button></span> }
+                @if (retirable) { <button class="btn btn-sm btn-outline-danger ms-1" type="button" (click)="retirarCampo(campo)">Retirar</button> }</span> }
             </li> }</ul>
           @if (editable) { <form [formGroup]="formularioCampo" (ngSubmit)="guardarCampo()" class="rejilla">
             <label>Nombre <input class="form-control" formControlName="nombre" /></label>
@@ -78,11 +78,11 @@
         <div><h4 class="h6">Actividades que usan el mensaje</h4>
           <ul class="list-group mb-3">@for (uso of detalle.usos; track uso.id) {
             <li class="list-group-item d-flex justify-content-between"><span>{{ nombreNodo(uso.actividadId) }}</span>
-              @if (editable) { <button class="btn btn-sm btn-outline-danger" type="button" (click)="retirarUso(uso)">Retirar</button> }</li>
+              @if (retirable) { <button class="btn btn-sm btn-outline-danger" type="button" (click)="retirarUso(uso)">Retirar</button> }</li>
           }</ul>
-          @if (editable) { <form [formGroup]="formularioUso" (ngSubmit)="guardarUso()">
+          @if (editable && detalle.mensaje.sentido === 'RECEPCION') { <form [formGroup]="formularioUso" (ngSubmit)="guardarUso()">
             <label>Actividad <select class="form-select" formControlName="actividadId"><option [ngValue]="0">Seleccione</option>
-              @for (actividad of actividades; track actividad.id) { <option [ngValue]="actividad.id">{{ actividad.nombre }}</option> }</select></label>
+              @for (actividad of actividadesUso; track actividad.id) { <option [ngValue]="actividad.id">{{ actividad.nombre }}</option> }</select></label>
             <button class="btn btn-primary btn-sm mt-2" [disabled]="guardando">Asociar actividad</button>
           </form> }
         </div>
@@ -96,11 +96,11 @@
       <div class="rejilla">
         <label>Pool de origen <select class="form-select" formControlName="poolOrigenId"><option [ngValue]="0">Seleccione</option>@for (pool of diagrama.pools; track pool.id) { <option [ngValue]="pool.id">{{ pool.nombre }}</option> }</select></label>
         <label>Pool de destino <select class="form-select" formControlName="poolDestinoId"><option [ngValue]="0">Seleccione</option>@for (pool of diagrama.pools; track pool.id) { <option [ngValue]="pool.id">{{ pool.nombre }}</option> }</select></label>
-        <label>Nodo de origen <select class="form-select" formControlName="nodoOrigenId"><option [ngValue]="null">No aplica</option>@for (nodo of diagrama.nodos; track nodo.id) { <option [ngValue]="nodo.id">{{ nodo.nombre }}</option> }</select></label>
-        <label>Nodo de destino <select class="form-select" formControlName="nodoDestinoId"><option [ngValue]="null">No aplica</option>@for (nodo of diagrama.nodos; track nodo.id) { <option [ngValue]="nodo.id">{{ nodo.nombre }}</option> }</select></label>
+        <label>Nodo de origen <select class="form-select" formControlName="nodoOrigenId"><option [ngValue]="null">No aplica</option>@for (nodo of nodosOrigenFlujo; track nodo.id) { <option [ngValue]="nodo.id">{{ nodo.nombre }}</option> }</select></label>
+        <label>Nodo de destino <select class="form-select" formControlName="nodoDestinoId"><option [ngValue]="null">No aplica</option>@for (nodo of nodosDestinoFlujo; track nodo.id) { <option [ngValue]="nodo.id">{{ nodo.nombre }}</option> }</select></label>
         <label>Destino técnico <select class="form-select" formControlName="tipoDestino"><option [ngValue]="null">No aplica</option><option value="CORREO">Correo</option><option value="SERVICIO_WEB">Servicio web</option><option value="COLA">Cola</option></select></label>
         <label>Política de fallo <select class="form-select" formControlName="politicaFallo"><option [ngValue]="null">No aplica</option><option value="CONTINUAR">Continuar</option><option value="DERIVAR">Derivar</option><option value="FINALIZAR">Finalizar</option></select></label>
-        <label>Actividad de error <select class="form-select" formControlName="actividadErrorId"><option [ngValue]="null">No aplica</option>@for (actividad of actividades; track actividad.id) { <option [ngValue]="actividad.id">{{ actividad.nombre }}</option> }</select></label>
+        <label>Actividad de error <select class="form-select" formControlName="actividadErrorId"><option [ngValue]="null">No aplica</option>@for (actividad of actividadesError; track actividad.id) { <option [ngValue]="actividad.id">{{ actividad.nombre }}</option> }</select></label>
       </div><div><button class="btn btn-primary" [disabled]="guardando">Guardar flujo</button></div>
     </form>
   }
@@ -109,7 +109,7 @@
     <article class="card card-body"><h3 class="h6">{{ nombrePool(flujo.poolOrigenId) }} → {{ nombrePool(flujo.poolDestinoId) }}</h3>
       <p>{{ nombreNodo(flujo.nodoOrigenId) }} → {{ nombreNodo(flujo.nodoDestinoId) }}</p>
       @if (editable) { <div class="acciones"><button class="btn btn-sm btn-outline-primary" type="button" (click)="editarFlujo(flujo)">Editar</button>
-        <button class="btn btn-sm btn-outline-danger" type="button" (click)="retirarFlujo(flujo)">Retirar</button></div> }
+        @if (retirable) { <button class="btn btn-sm btn-outline-danger" type="button" (click)="retirarFlujo(flujo)">Retirar</button> }</div> }
     </article>
   } @empty { <p>No hay flujos de mensaje configurados.</p> }</div>
 </section>

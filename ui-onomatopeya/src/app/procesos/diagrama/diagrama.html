@@ -60,7 +60,7 @@
     <section class="zona-pools">
       <div class="titulo-seccion">
         <h2>Diagrama del proceso</h2>
-        @if (puedeEditar) {
+        @if (puedeCrearPool) {
           <button type="button" class="btn btn-outline-primary" (click)="iniciarCreacionPool()">
             Agregar pool
           </button>
@@ -80,7 +80,7 @@
         <p class="texto-error mt-3">{{ errorArco }}</p>
       }
 
-      @if (puedeEditar && (creandoPool || editandoPoolId !== null)) {
+      @if ((puedeCrearPool && creandoPool) || (puedeEditarPool && editandoPoolId !== null)) {
         <form class="formulario-pool" [formGroup]="formularioPool" (ngSubmit)="guardarPool()">
           <h3>{{ editandoPoolId === null ? 'Nuevo pool' : 'Editar pool' }}</h3>
           <div class="campos-pool">
@@ -128,18 +128,18 @@
               @if (pool.cajaNegra) {
                 <span class="etiqueta-caja-negra">Caja negra</span>
               }
-              @if (puedeEditar) {
+              @if (puedeEditarPool) {
                 <button type="button" class="btn btn-sm btn-outline-secondary" (click)="iniciarEdicionPool(pool)">
                   Editar
                 </button>
               }
-              @if (puedeEditar && !pool.propietario) {
+              @if (puedeRetirarPool && !pool.propietario) {
                 <button type="button" class="btn btn-sm btn-outline-danger" (click)="retirarPool(pool)">
                   Retirar
                 </button>
               }
               @if (!pool.cajaNegra) {
-                @if (puedeEditar) {
+                @if (puedeCrearLane) {
                   <button type="button" class="btn btn-sm btn-outline-primary" (click)="iniciarCreacionLane(pool)">
                     Agregar lane
                   </button>
@@ -158,7 +158,7 @@
             </div>
           </header>
 
-          @if (puedeEditar && creandoLaneParaPoolId === pool.id) {
+          @if ((puedeCrearLane || puedeEditarLane) && creandoLaneParaPoolId === pool.id) {
             <form class="formulario-lane" [formGroup]="formularioLane" (ngSubmit)="guardarLane()">
               <h4>{{ editandoLaneId === null ? 'Nueva lane' : 'Editar lane' }}</h4>
               @if (cargandoRoles) {
@@ -314,7 +314,9 @@
             </form>
           }
 
-          <app-diagrama-lienzo [editable]="puedeEditar" [bloqueado]="guardandoNodo || guardandoArco" [movimientoFinalizado]="movimientoFinalizado" [retirable]="puedeRetirar" [pool]="pool" [lanes]="lanesDePool(pool.id)" [nodos]="nodosDePool(pool.id)" [arcos]="arcosDePool(pool.id)"
+          <app-diagrama-lienzo [editable]="puedeEditar" [laneEditable]="puedeEditarLane"
+            [laneRetirable]="puedeRetirarLane" [bloqueado]="guardandoNodo || guardandoArco"
+            [movimientoFinalizado]="movimientoFinalizado" [retirable]="puedeRetirar" [pool]="pool" [lanes]="lanesDePool(pool.id)" [nodos]="nodosDePool(pool.id)" [arcos]="arcosDePool(pool.id)"
             (editarLane)="iniciarEdicionLane($event)" (retirarLane)="retirarLane($event)"
             (editarNodo)="iniciarEdicionNodo($event)" (retirarNodo)="retirarNodo($event)"
             (moverNodo)="moverNodoEnLienzo($event)" (errorMovimiento)="errorNodo = $event"
@@ -357,7 +359,7 @@
       </section>
     }
 
-    <app-mensajeria [diagrama]="diagrama" [editable]="puedeEditar"
+    <app-mensajeria [diagrama]="diagrama" [editable]="puedeEditar" [retirable]="puedeRetirar"
       (actualizado)="cargarDiagrama(diagrama.proceso.id)" />
 
     @if (diagrama.advertencias.length > 0) {

@@ -9,7 +9,7 @@
         <div class="cabecera-lane">
           <h4>{{ lane.nombre }}</h4>
           <div>
-            @if (editable) {
+            @if (laneEditable) {
               <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
@@ -18,7 +18,7 @@
                 Editar
               </button>
             }
-            @if (editable) {
+            @if (laneRetirable) {
               <button
                 type="button"
                 class="btn btn-sm btn-outline-danger ms-1"
