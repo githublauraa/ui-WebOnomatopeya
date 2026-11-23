@@ -357,6 +357,9 @@
       </section>
     }
 
+    <app-mensajeria [diagrama]="diagrama" [editable]="puedeEditar"
+      (actualizado)="cargarDiagrama(diagrama.proceso.id)" />
+
     @if (diagrama.advertencias.length > 0) {
       <section class="advertencias">
         <h2>Advertencias</h2>

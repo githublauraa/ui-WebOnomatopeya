@@ -14,11 +14,12 @@ import { DiagramaService } from '../../services/diagrama.service';
 import { ProcesoService } from '../../services/proceso.service';
 import { RolProcesoService } from '../../services/rol-proceso.service';
 import { ConexionLienzo, DiagramaLienzoComponent, MovimientoNodo } from './diagrama-lienzo/diagrama-lienzo';
+import { MensajeriaComponent } from '../mensajeria/mensajeria.component';
 
 @Component({
   selector: 'app-diagrama',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, DiagramaLienzoComponent],
+  imports: [RouterLink, ReactiveFormsModule, DiagramaLienzoComponent, MensajeriaComponent],
   templateUrl: './diagrama.html',
   styleUrl: './diagrama.css'
 })
