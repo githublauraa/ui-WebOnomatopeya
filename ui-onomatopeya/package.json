@@ -9,7 +9,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:coverage": "ng test --watch=false --coverage",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:real": "playwright test --config playwright.real.config.ts"
   },
   "private": true,
   "packageManager": "npm@11.12.1",
