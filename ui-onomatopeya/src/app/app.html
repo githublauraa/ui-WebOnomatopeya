@@ -1,2 +1,16 @@
-<!-- Angular carga aquí el componente asociado a la ruta activa. -->
+@if (auth.token()) {
+  <header class="barra-principal">
+    <a class="marca" routerLink="/procesos">Onomatopeya</a>
+    <nav aria-label="Navegación principal">
+      <a routerLink="/procesos" routerLinkActive="activo">Procesos</a>
+      <a routerLink="/roles-proceso" routerLinkActive="activo">Roles de proceso</a>
+      @if (auth.esAdministrador()) {
+        <a routerLink="/usuarios" routerLinkActive="activo">Usuarios</a>
+        <a routerLink="/usuarios/roles" routerLinkActive="activo">Roles de acceso</a>
+        <a routerLink="/empresas" routerLinkActive="activo">Empresa</a>
+      }
+      <button type="button" (click)="cerrarSesion()">Cerrar sesión</button>
+    </nav>
+  </header>
+}
 <router-outlet></router-outlet>

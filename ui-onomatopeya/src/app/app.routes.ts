@@ -8,7 +8,7 @@ import { AceptarInvitacionComponent } from './usuarios/aceptar-invitacion/acepta
 import { UsuarioRolesComponent } from './usuarios/usuario-roles/usuario-roles.component';
 import { RolesProcesoComponent } from './roles-proceso/roles-proceso.component';
 import { RegistroEmpresaComponent } from './empresas/empresa-registro/empresa-registro.component';
-import { authGuard } from './services/auth.guard';
+import { authGuard, roleGuard } from './services/auth.guard';
 import { EmpresaListComponent } from './empresas/empresa-list/empresa-list.component';
 
 export const routes: Routes = [
@@ -16,10 +16,25 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'invitacion/aceptar', component: AceptarInvitacionComponent },
   { path: 'registro', component: RegistroEmpresaComponent },
-  { path: 'usuarios', component: UsuarioListComponent, canActivate: [authGuard] },
-  { path: 'usuarios/roles', component: UsuarioRolesComponent, canActivate: [authGuard] },
+  {
+    path: 'usuarios',
+    component: UsuarioListComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRADOR'] }
+  },
+  {
+    path: 'usuarios/roles',
+    component: UsuarioRolesComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRADOR'] }
+  },
   { path: 'roles-proceso', component: RolesProcesoComponent, canActivate: [authGuard] },
-  { path: 'empresas', component: EmpresaListComponent, canActivate: [authGuard] },
+  {
+    path: 'empresas',
+    component: EmpresaListComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRADOR'] }
+  },
   { path: 'procesos', component: ProcesosListComponent, canActivate: [authGuard] },
   { path: 'procesos/nuevo', component: ProcesoFormComponent, canActivate: [authGuard], data: { editar: true } },
   { path: 'procesos/:id/editar', component: ProcesoFormComponent, canActivate: [authGuard], data: { editar: true } },
